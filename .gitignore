@@ -1,0 +1,38 @@
+# ============================================================
+# EEG Hardware Validation System - Git Ignore Rules
+# ============================================================
+
+# ─── Data Folder (Recorded Data) ─────────────────────────────
+# All recorded .bin/.json files should not be tracked
+data/
+!data/.gitkeep
+
+# Legacy path (if still used)
+online/data/
+!online/data/.gitkeep
+acquisition/data/
+!acquisition/data/.gitkeep
+
+# ─── Runtime Config (Not Templates) ──────────────────────────
+online/config.json
+acquisition/config.json
+
+# ─── Report Output ───────────────────────────────────────────
+*_report/
+
+# ─── Python Artifacts ────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# ─── Jupyter Notebook Artifacts ──────────────────────────────
+.ipynb_checkpoints/
+
+# ─── IDE & Editor ────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*~
+.DS_Store
+Thumbs.db

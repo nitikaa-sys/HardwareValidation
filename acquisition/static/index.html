@@ -1,0 +1,1628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Acquisition</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 30px;
+        }
+
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .subtitle {
+            color: #7f8c8d;
+            margin-bottom: 30px;
+            font-size: 0.9em;
+        }
+
+        .section {
+            margin: 25px 0;
+            padding: 20px;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            background: #fafafa;
+        }
+
+        .section h2 {
+            color: #34495e;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 8px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 200px 1fr;
+            gap: 15px;
+            margin: 15px 0;
+            align-items: center;
+        }
+
+        label {
+            font-weight: 600;
+            color: #555;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        select {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        .color-mapping {
+            display: grid;
+            grid-template-columns: 80px 1fr;
+            gap: 10px;
+            align-items: center;
+            margin: 10px 0;
+        }
+
+        .color-label {
+            font-weight: 600;
+            padding: 8px;
+            border-radius: 4px;
+            text-align: center;
+            color: white;
+        }
+
+        .color-red { background: #e74c3c; }
+        .color-blue { background: #3498db; }
+        .color-green { background: #2ecc71; }
+        .color-yellow { background: #f39c12; color: #333; }
+
+        button {
+            padding: 12px 24px;
+            margin: 5px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-primary {
+            background: #3498db;
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: #2980b9;
+        }
+
+        .btn-success {
+            background: #27ae60;
+            color: white;
+        }
+
+        .btn-success:hover:not(:disabled) {
+            background: #229954;
+        }
+
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .btn-danger:hover:not(:disabled) {
+            background: #c0392b;
+        }
+
+        .status {
+            font-size: 1.4em;
+            font-weight: bold;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+            text-align: center;
+        }
+
+        .status.idle { background: #ecf0f1; color: #7f8c8d; }
+        .status.running { background: #d5f4e6; color: #27ae60; }
+        .status.stopping { background: #fff3cd; color: #f39c12; }
+        .status.finished { background: #d1ecf1; color: #0c5460; }
+        .status.error { background: #f8d7da; color: #721c24; }
+
+        .progress-container {
+            margin: 20px 0;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 30px;
+            background: #ecf0f1;
+            border-radius: 15px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #3498db, #2ecc71);
+            transition: width 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+
+        .progress-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 15px 0;
+        }
+
+        .info-box {
+            padding: 12px;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+        }
+
+        .info-label {
+            font-size: 0.85em;
+            color: #7f8c8d;
+            margin-bottom: 4px;
+        }
+
+        .info-value {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .log {
+            height: 300px;
+            overflow-y: auto;
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            white-space: pre-wrap;
+            line-height: 1.4;
+        }
+
+        .file-list {
+            list-style: none;
+        }
+
+        .file-item {
+            padding: 10px;
+            margin: 5px 0;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .file-name {
+            font-family: 'Courier New', monospace;
+            color: #2c3e50;
+        }
+
+        .file-size {
+            color: #7f8c8d;
+            font-size: 0.9em;
+        }
+
+        .alert {
+            padding: 12px;
+            margin: 10px 0;
+            border-radius: 6px;
+            font-weight: 600;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .profile-preview {
+            margin-top: 15px;
+        }
+
+        .profile-preview-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .profile-preview-content {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+
+        .profile-warning {
+            background: #fff3cd;
+            color: #856404;
+            padding: 10px 15px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .profile-ok {
+            background: #d4edda;
+            color: #155724;
+            padding: 10px 15px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .profile-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .summary-item {
+            padding: 10px;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        .summary-label {
+            font-size: 0.8em;
+            color: #7f8c8d;
+        }
+
+        .summary-value {
+            font-size: 1.1em;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .summary-value.warning {
+            color: #e74c3c;
+        }
+
+        .summary-value.ok {
+            color: #27ae60;
+        }
+
+        /* Channel Configuration Table */
+        .channel-config-section {
+            margin: 15px 0;
+        }
+
+        .channel-config-section h4 {
+            margin: 0 0 10px 0;
+            color: #34495e;
+            font-size: 0.95em;
+        }
+
+        .channel-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85em;
+            background: white;
+            border-radius: 6px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .channel-table th {
+            background: #34495e;
+            color: white;
+            padding: 10px 8px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+
+        .channel-table td {
+            padding: 8px;
+            text-align: center;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .channel-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .channel-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .channel-table .ch-name {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .channel-table .ch-enabled {
+            background: #d4edda;
+            color: #155724;
+            font-weight: 600;
+        }
+
+        .channel-table .ch-disabled {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .channel-table .ch-test-mux {
+            background: #fff3cd;
+            color: #856404;
+            font-weight: 600;
+        }
+
+        .channel-table .ch-value {
+            font-family: 'Courier New', monospace;
+            font-size: 0.95em;
+        }
+
+        .channel-table .ch-disabled-row {
+            opacity: 0.5;
+        }
+
+        /* Tab Styles */
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .tab-btn {
+            padding: 12px 24px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            color: #7f8c8d;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+        }
+
+        .tab-btn:hover {
+            color: #3498db;
+            background: #f8f9fa;
+        }
+
+        .tab-btn.active {
+            color: #3498db;
+            border-bottom-color: #3498db;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .field-group {
+            margin: 20px 0;
+            padding: 15px;
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+        }
+
+        .field-group h3 {
+            margin: 0 0 15px 0;
+            color: #34495e;
+            font-size: 1.1em;
+        }
+
+        #signalInjectionFields {
+            margin-top: 15px;
+            padding: 15px;
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧠 Data Acquisition</h1>
+
+        <!-- Configuration Section -->
+        <div class="section">
+            <h2>📋 Configuration</h2>
+            
+            <!-- Tabs -->
+            <div class="tabs">
+                <button class="tab-btn active" onclick="switchTab('validation')">🔬 Validation</button>
+                <button class="tab-btn" onclick="switchTab('experiment')">🧪 Experiment</button>
+            </div>
+
+            <!-- Common Fields (Both Tabs) -->
+            <div class="field-group">
+                <h3>Common Settings</h3>
+                <div class="form-row">
+                    <label>ESP32 IP Address:</label>
+                    <input type="text" id="espIp" value="node.local" />
+                </div>
+                <div class="form-row">
+                    <label>Firmware Version:</label>
+                    <input type="text" id="firmware" value="FW2" />
+                </div>
+                <div class="form-row">
+                    <label>Session Name:</label>
+                    <input type="text" id="outputFolder" value="default_session" placeholder="e.g., Validation_Headband" />
+                </div>
+                <div class="form-row">
+                    <label>Hardware Profile:</label>
+                    <select id="profilePath" onchange="onProfileChange()">
+                        <option value="">None (use current)</option>
+                    </select>
+                </div>
+
+                <!-- Profile Preview Section -->
+                <div id="profilePreviewSection" class="profile-preview hidden">
+                    <div class="profile-preview-header">
+                        <strong>📄 Profile Preview: <span id="profileFileName"></span></strong>
+                    </div>
+                    
+                    <div id="profileStatus"></div>
+                    
+                    <div class="profile-summary" id="profileSummary"></div>
+                    
+                    <details>
+                        <summary style="cursor: pointer; font-weight: 600; margin-bottom: 10px;">Show Full JSON (sent to board)</summary>
+                        <div class="profile-preview-content" id="profilePreviewContent"></div>
+                    </details>
+                </div>
+
+                <div class="form-row">
+                    <label>Sample Rate:</label>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <span id="sampleRateDisplay">Detecting...</span>
+                        <button class="btn-primary" onclick="detectSampleRate()">🔍 Detect</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Validation Tab Content -->
+            <div id="tab-validation" class="tab-content active">
+                <div class="field-group">
+                    <h3>Validation Settings</h3>
+                    
+                    <div class="form-row">
+                        <label>Scenario:</label>
+                        <select id="validationScenario" onchange="toggleSignalInjectionFields()">
+                            <option value="general_test">General Test</option>
+                            <option value="internal_noise">Internal Noise</option>
+                            <option value="external_noise">External Noise</option>
+                            <option value="known_signal_injection">Known Signal Injection</option>
+                            <option value="functional_tests">Functional Tests</option>
+                            <option value="microphone_tests">Microphone Tests</option>
+                        </select>
+                    </div>
+
+                    <!-- Signal Injection Fields (conditional) -->
+                    <div id="signalInjectionFields" class="hidden">
+                        <strong>📡 Signal Injection Parameters:</strong>
+                        <div class="form-row" style="margin-top: 10px;">
+                            <label>Frequency (Hz):</label>
+                            <input type="number" id="injectedFreqHz" value="1000" min="1" />
+                        </div>
+                        <div class="form-row">
+                            <label>Channel:</label>
+                            <select id="injectedChannel">
+                                <option value="CH1">CH1</option>
+                                <option value="CH2" selected>CH2</option>
+                                <option value="CH3">CH3</option>
+                                <option value="CH4">CH4</option>
+                                <option value="CH5">CH5</option>
+                                <option value="CH6">CH6</option>
+                                <option value="CH7">CH7</option>
+                                <option value="CH8">CH8</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <label>Duration (s):</label>
+                        <input type="number" id="validationDuration" value="5" step="0.1" min="0.1" />
+                    </div>
+
+                    <div class="form-row">
+                        <label>LED Indicator:</label>
+                        <input type="checkbox" id="validationLedIndicator" />
+                        <span style="margin-left: 10px; color: #7f8c8d; font-size: 0.9em;">Optional operator visual feedback</span>
+                    </div>
+                </div>
+
+                <!-- Run All Profiles Section -->
+                <div class="field-group" style="background: #e8f4fd; border-color: #3498db;">
+                    <h3>🔄 Profile Validation Suite</h3>
+                    <p style="color: #555; margin-bottom: 15px;">
+                        Automatically cycles through all profiles in the <code>profiles/</code> directory, 
+                        running a 5-second validation stream for each. Files are saved with the profile name in the filename.
+                    </p>
+                    <button class="btn-primary" onclick="runAllProfiles()" id="btnRunAllProfiles" style="font-size: 16px; padding: 15px 30px;">
+                        🔄 Run All Profiles
+                    </button>
+                    <button class="btn-danger" onclick="stopExperiment()" id="btnStopAllProfiles" disabled style="margin-left: 10px;">
+                        ⏹ Stop
+                    </button>
+                    
+                    <!-- All Profiles Progress Display -->
+                    <div id="allProfilesProgress" class="hidden" style="margin-top: 20px;">
+                        <div style="background: white; padding: 15px; border-radius: 6px; border: 1px solid #ddd;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                <strong>Profile Progress:</strong>
+                                <span id="allProfilesCounter">0 / 0</span>
+                            </div>
+                            <div class="progress-bar" style="height: 20px;">
+                                <div class="progress-fill" id="allProfilesProgressBar" style="width: 0%"></div>
+                            </div>
+                            <div style="margin-top: 15px;">
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <strong>Current Profile:</strong>
+                                    <span id="currentProfileName" style="font-family: 'Courier New', monospace; color: #3498db;">-</span>
+                                    <span id="currentProfileStatus" style="padding: 2px 8px; border-radius: 4px; font-size: 0.85em;">-</span>
+                                </div>
+                            </div>
+                            <div id="allProfilesResults" style="margin-top: 15px; max-height: 200px; overflow-y: auto;">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Experiment Tab Content -->
+            <div id="tab-experiment" class="tab-content">
+                <div class="field-group">
+                    <h3>Experiment Settings</h3>
+                    
+                    <div class="form-row">
+                        <label>Subject ID:</label>
+                        <input type="text" id="subjectId" placeholder="e.g., P001" value="P001" />
+                    </div>
+
+                    <div class="form-row">
+                        <label>Number of Events:</label>
+                        <input type="number" id="numEvents" value="40" min="1" />
+                    </div>
+
+                    <div class="form-row">
+                        <label>Duration (s):</label>
+                        <input type="number" id="duration" value="5" step="0.1" min="0.1" />
+                    </div>
+
+                    <div class="form-row">
+                        <label>Random Seed:</label>
+                        <input type="number" id="randomSeed" value="42" placeholder="Leave empty for random" />
+                    </div>
+
+                    <div class="form-row">
+                        <label>Sound Duration (s):</label>
+                        <input type="number" id="soundDuration" value="5" min="0" step="0.1" />
+                    </div>
+
+                    <div class="form-row">
+                        <label>LED Enabled:</label>
+                        <input type="checkbox" id="ledEnabled" checked />
+                    </div>
+
+                    <div class="form-row">
+                        <label>Equal Condition Counts:</label>
+                        <input type="checkbox" id="enforceBalance" checked />
+                    </div>
+
+                    <div class="form-row">
+                        <label>Inter-Event Delay (s):</label>
+                        <input type="number" id="interEventDelay" value="0.5" step="0.1" />
+                    </div>
+
+                    <div style="margin-top: 20px;">
+                        <strong>Condition Mapping:</strong>
+                        <div style="margin-top: 10px;">
+                            <div class="color-mapping">
+                                <div class="color-label color-red">RED</div>
+                                <input type="text" id="mappingRed" value="LEFT" />
+                            </div>
+                            <div class="color-mapping">
+                                <div class="color-label color-blue">BLUE</div>
+                                <input type="text" id="mappingBlue" value="RIGHT" />
+                            </div>
+                            <div class="color-mapping">
+                                <div class="color-label color-green">GREEN</div>
+                                <input type="text" id="mappingGreen" value="MATH" />
+                            </div>
+                            <div class="color-mapping">
+                                <div class="color-label color-yellow">YELLOW</div>
+                                <input type="text" id="mappingYellow" value="REST" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div style="margin-top: 20px;">
+                <button class="btn-success" onclick="saveConfig()">💾 Save Config</button>
+                <button class="btn-primary" onclick="loadConfig()">📂 Load Config</button>
+                <button class="btn-primary" onclick="generateSchedule()" id="btnGenerateSchedule" disabled>📊 Generate Schedule</button>
+            </div>
+
+            <div id="configAlert" class="alert hidden"></div>
+        </div>
+
+        <!-- Controls Section -->
+        <div class="section">
+            <h2>🎮 Controls</h2>
+            <button class="btn-success" onclick="runExperiment()" id="btnRun" disabled>▶ Run Experiment</button>
+            <button class="btn-danger" onclick="stopExperiment()" id="btnStop" disabled>⏹ Stop</button>
+        </div>
+
+        <!-- Status Section -->
+        <div class="section">
+            <h2>📊 Status</h2>
+            <div class="status idle" id="statusDisplay">Idle</div>
+            
+            <div class="progress-container">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <div class="progress-info">
+                <div class="info-box">
+                    <div class="info-label">Event</div>
+                    <div class="info-value" id="eventNum">-</div>
+                </div>
+                <div class="info-box">
+                    <div class="info-label">Condition</div>
+                    <div class="info-value" id="condition">-</div>
+                </div>
+                <div class="info-box">
+                    <div class="info-label">LED Color</div>
+                    <div class="info-value" id="ledColor">-</div>
+                </div>
+                <div class="info-box">
+                    <div class="info-label">Frames</div>
+                    <div class="info-value" id="frames">-</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Log Section -->
+        <div class="section">
+            <h2>📝 Event Log</h2>
+            <div class="log" id="log"></div>
+        </div>
+
+        <!-- Files Section -->
+        <div class="section">
+            <h2>📁 Saved Files</h2>
+            <button class="btn-primary" onclick="refreshFiles()">🔄 Refresh</button>
+            <div id="filesSummary" style="margin: 10px 0; color: #7f8c8d;"></div>
+            <ul class="file-list" id="fileList"></ul>
+        </div>
+    </div>
+
+    <script>
+        let ws = null;
+        let currentEventNum = 0;
+        let totalEvents = 0;
+        let detectedSampleRate = 16000;  // Default fallback
+        let currentActiveTab = 'validation';  // Track active tab
+
+        // ========== TAB MANAGEMENT ==========
+
+        function switchTab(tabName) {
+            // Update tab buttons - find the matching button by data-tab or content
+            const tabs = document.querySelectorAll('.tab-btn');
+            tabs.forEach(btn => {
+                btn.classList.remove('active');
+                // Check if button's onclick contains this tabName
+                const onclick = btn.getAttribute('onclick') || '';
+                if (onclick.includes(`'${tabName}'`)) {
+                    btn.classList.add('active');
+                }
+            });
+
+            // Update tab content
+            document.getElementById('tab-validation').classList.remove('active');
+            document.getElementById('tab-experiment').classList.remove('active');
+            document.getElementById(`tab-${tabName}`).classList.add('active');
+
+            currentActiveTab = tabName;
+            appendLog(`Switched to ${tabName} mode`);
+        }
+
+        function toggleSignalInjectionFields() {
+            const scenario = document.getElementById('validationScenario').value;
+            const fields = document.getElementById('signalInjectionFields');
+            
+            if (scenario === 'known_signal_injection') {
+                fields.classList.remove('hidden');
+            } else {
+                fields.classList.add('hidden');
+            }
+        }
+
+        // ========== SAMPLE RATE DETECTION ==========
+
+        async function detectSampleRate() {
+            const display = document.getElementById('sampleRateDisplay');
+            display.textContent = 'Detecting...';
+            
+            try {
+                const response = await fetch('/api/detect-sample-rate');
+                const result = await response.json();
+                
+                if (result.success) {
+                    detectedSampleRate = result.sample_rate_sps;
+                    display.textContent = `${detectedSampleRate} SPS (detected)`;
+                    display.style.color = '#27ae60';
+                    appendLog(`Sample rate detected: ${detectedSampleRate} SPS`);
+                } else {
+                    display.textContent = 'Detection failed - using 16000 SPS';
+                    display.style.color = '#e74c3c';
+                    detectedSampleRate = 16000;
+                }
+            } catch (error) {
+                display.textContent = 'Detection failed - using 16000 SPS';
+                display.style.color = '#e74c3c';
+                detectedSampleRate = 16000;
+                appendLog(`Sample rate detection error: ${error.message}`);
+            }
+        }
+
+        // ========== CONFIG BUILDERS ==========
+
+        function computeFrames(durationSeconds, sampleRateSps) {
+            // frames = (sample_rate * duration) / 50 (samples per frame)
+            return Math.round((sampleRateSps * durationSeconds) / 50);
+        }
+
+        function getValidationConfig() {
+            const scenario = document.getElementById('validationScenario').value;
+            const duration = parseFloat(document.getElementById('validationDuration').value);
+            
+            const config = {
+                esp32: {
+                    ip: document.getElementById('espIp').value
+                },
+                experiment: {
+                    num_events: 1,  // Validation runs 1 event
+                    random_seed: null,
+                    profile_path: document.getElementById('profilePath').value || null,
+                    output_folder: document.getElementById('outputFolder').value,
+                    inter_event_delay: 0.5
+                },
+                routine: {
+                    acquisition_duration_seconds: duration,
+                    sound_duration_us: 0,
+                    led_enabled: document.getElementById('validationLedIndicator').checked
+                },
+                conditions: {
+                    enforce_equal_condition_count: false,
+                    mapping: {
+                        RED: "VAL", BLUE: "VAL", GREEN: "VAL", YELLOW: "VAL"
+                    }
+                },
+                meta: {
+                    mode: "validation",
+                    firmware: document.getElementById('firmware').value,
+                    board: "R2",
+                    validation_scenario: scenario
+                }
+            };
+            
+            // Add injected signal if applicable
+            if (scenario === 'known_signal_injection') {
+                config.meta.injected_signal = {
+                    freq_hz: parseInt(document.getElementById('injectedFreqHz').value),
+                    channel: document.getElementById('injectedChannel').value
+                };
+            }
+            
+            return config;
+        }
+
+        function getExperimentConfig() {
+            const duration = parseFloat(document.getElementById('duration').value);
+            const seed = document.getElementById('randomSeed').value;
+            
+            return {
+                esp32: {
+                    ip: document.getElementById('espIp').value
+                },
+                experiment: {
+                    num_events: parseInt(document.getElementById('numEvents').value),
+                    random_seed: seed ? parseInt(seed) : null,
+                    profile_path: document.getElementById('profilePath').value || null,
+                    output_folder: document.getElementById('outputFolder').value,
+                    inter_event_delay: parseFloat(document.getElementById('interEventDelay').value)
+                },
+                routine: {
+                    acquisition_duration_seconds: duration,
+                    sound_duration_us: Math.round(parseFloat(document.getElementById('soundDuration').value) * 1000000),
+                    led_enabled: document.getElementById('ledEnabled').checked
+                },
+                conditions: {
+                    enforce_equal_condition_count: document.getElementById('enforceBalance').checked,
+                    mapping: {
+                        RED: document.getElementById('mappingRed').value,
+                        BLUE: document.getElementById('mappingBlue').value,
+                        GREEN: document.getElementById('mappingGreen').value,
+                        YELLOW: document.getElementById('mappingYellow').value
+                    }
+                },
+                meta: {
+                    mode: "experiment",
+                    firmware: document.getElementById('firmware').value,
+                    board: "R2",
+                    subject_id: document.getElementById('subjectId').value
+                }
+            };
+        }
+
+        // Connect WebSocket
+        function connectWebSocket() {
+            ws = new WebSocket('ws://localhost:8000/ws');
+            
+            ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                handleStatusUpdate(data);
+            };
+
+            ws.onclose = () => {
+                appendLog('WebSocket disconnected. Reconnecting...');
+                setTimeout(connectWebSocket, 2000);
+            };
+
+            ws.onerror = (error) => {
+                appendLog('WebSocket error. Will reconnect...');
+            };
+        }
+
+        // Handle status updates from server
+        function handleStatusUpdate(data) {
+            switch(data.type) {
+                case 'state':
+                    updateStatus(data.status, data.message || data.error);
+                    // Update all profiles buttons on state change
+                    if (data.status === 'finished' || data.status === 'error' || data.status === 'stopped') {
+                        document.getElementById('btnRunAllProfiles').disabled = false;
+                        document.getElementById('btnStopAllProfiles').disabled = true;
+                    }
+                    break;
+                case 'event_start':
+                    currentEventNum = data.event;
+                    totalEvents = data.total;
+                    document.getElementById('eventNum').textContent = `${data.event} / ${data.total}`;
+                    document.getElementById('condition').textContent = data.condition;
+                    document.getElementById('ledColor').textContent = data.led_color;
+                    document.getElementById('frames').textContent = `0 / ${data.expected_frames}`;
+                    appendLog(`Event ${data.event}: ${data.condition} (${data.led_color})`);
+                    break;
+                case 'frame_progress':
+                    const progress = (data.frames_received / data.expected_frames) * 100;
+                    document.getElementById('progressFill').style.width = progress + '%';
+                    document.getElementById('progressFill').textContent = Math.round(progress) + '%';
+                    document.getElementById('frames').textContent = `${data.frames_received} / ${data.expected_frames}`;
+                    break;
+                case 'event_done':
+                    if (data.success) {
+                        appendLog(`✓ Event ${data.event} complete`);
+                    } else {
+                        appendLog(`✗ Event ${data.event} failed: ${data.error}`);
+                    }
+                    break;
+                case 'file_saved':
+                    if (data.success) {
+                        appendLog(`📁 Saved: ${data.filename}`);
+                    }
+                    break;
+                case 'summary':
+                    appendLog(`\n=== SUMMARY ===`);
+                    appendLog(`Successes: ${data.stream_successes} | Failures: ${data.stream_failures}`);
+                    refreshFiles();
+                    break;
+                
+                // ========== ALL PROFILES UPDATES ==========
+                case 'all_profiles_start':
+                    appendLog(`\n🔄 Starting validation for ${data.total_profiles} profiles...`);
+                    document.getElementById('allProfilesProgress').classList.remove('hidden');
+                    document.getElementById('allProfilesCounter').textContent = `0 / ${data.total_profiles}`;
+                    document.getElementById('allProfilesProgressBar').style.width = '0%';
+                    document.getElementById('allProfilesResults').innerHTML = '';
+                    updateStatus('running', `Profile validation: 0/${data.total_profiles}`);
+                    break;
+                    
+                case 'profile_progress':
+                    handleProfileProgress(data);
+                    break;
+                    
+                case 'all_profiles_complete':
+                    appendLog(`\n✅ ALL PROFILES COMPLETE`);
+                    appendLog(`   Successful: ${data.successful} | Failed: ${data.failed}`);
+                    document.getElementById('allProfilesCounter').textContent = `${data.total} / ${data.total}`;
+                    document.getElementById('allProfilesProgressBar').style.width = '100%';
+                    document.getElementById('btnRunAllProfiles').disabled = false;
+                    document.getElementById('btnStopAllProfiles').disabled = true;
+                    updateStatus('finished', `Completed ${data.successful}/${data.total} profiles`);
+                    refreshFiles();
+                    break;
+                    
+                case 'all_profiles_stopped':
+                    appendLog(`\n⚠ Profile validation stopped after ${data.completed}/${data.total} profiles`);
+                    document.getElementById('btnRunAllProfiles').disabled = false;
+                    document.getElementById('btnStopAllProfiles').disabled = true;
+                    updateStatus('stopped', `Stopped after ${data.completed} profiles`);
+                    break;
+            }
+        }
+        
+        // Handle individual profile progress updates
+        function handleProfileProgress(data) {
+            const { current, total, profile, status, error, frames, sample_rate } = data;
+            
+            // Update counter and progress bar
+            document.getElementById('allProfilesCounter').textContent = `${current} / ${total}`;
+            const progressPercent = ((current - 1) / total) * 100;  // Progress for completed profiles
+            document.getElementById('allProfilesProgressBar').style.width = progressPercent + '%';
+            
+            // Update current profile display
+            document.getElementById('currentProfileName').textContent = profile;
+            const statusEl = document.getElementById('currentProfileStatus');
+            
+            // Status badge styling
+            const statusStyles = {
+                'loading': { bg: '#3498db', color: 'white', text: '📥 Loading...' },
+                'streaming': { bg: '#f39c12', color: 'white', text: '📡 Streaming...' },
+                'completed': { bg: '#27ae60', color: 'white', text: '✓ Done' },
+                'failed': { bg: '#e74c3c', color: 'white', text: '✗ Failed' }
+            };
+            
+            const style = statusStyles[status] || { bg: '#7f8c8d', color: 'white', text: status };
+            statusEl.style.backgroundColor = style.bg;
+            statusEl.style.color = style.color;
+            statusEl.textContent = style.text;
+            
+            // Log based on status
+            if (status === 'loading') {
+                appendLog(`[${current}/${total}] Loading profile: ${profile}`);
+            } else if (status === 'streaming') {
+                appendLog(`[${current}/${total}] Streaming: ${frames} frames @ ${sample_rate} SPS`);
+            } else if (status === 'completed') {
+                appendLog(`[${current}/${total}] ✓ ${profile} completed`);
+                addProfileResult(profile, true);
+            } else if (status === 'failed') {
+                appendLog(`[${current}/${total}] ✗ ${profile} failed: ${error}`);
+                addProfileResult(profile, false, error);
+            }
+            
+            // Update main status display during streaming
+            if (status === 'streaming') {
+                updateStatus('running', `Profile ${current}/${total}: ${profile}`);
+            }
+        }
+        
+        // Add result to the results list
+        function addProfileResult(profile, success, error = null) {
+            const resultsDiv = document.getElementById('allProfilesResults');
+            const resultEl = document.createElement('div');
+            resultEl.style.cssText = `
+                padding: 8px 12px;
+                margin: 4px 0;
+                border-radius: 4px;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                font-size: 0.9em;
+                ${success ? 'background: #d4edda; color: #155724;' : 'background: #f8d7da; color: #721c24;'}
+            `;
+            resultEl.innerHTML = `
+                <span style="font-family: 'Courier New', monospace;">${profile}</span>
+                <span>${success ? '✓ OK' : '✗ ' + (error || 'Failed')}</span>
+            `;
+            resultsDiv.appendChild(resultEl);
+            resultsDiv.scrollTop = resultsDiv.scrollHeight;
+        }
+
+        // Update status display
+        function updateStatus(status, message) {
+            const statusDisplay = document.getElementById('statusDisplay');
+            statusDisplay.className = `status ${status}`;
+            statusDisplay.textContent = status.charAt(0).toUpperCase() + status.slice(1);
+            if (message) {
+                statusDisplay.textContent += ': ' + message;
+            }
+
+            // Update button states
+            const btnRun = document.getElementById('btnRun');
+            const btnStop = document.getElementById('btnStop');
+            
+            if (status === 'running' || status === 'starting') {
+                btnRun.disabled = true;
+                btnStop.disabled = false;
+            } else {
+                btnRun.disabled = false;
+                btnStop.disabled = true;
+            }
+        }
+
+        // Append log message
+        function appendLog(message) {
+            const log = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            log.textContent += `[${timestamp}] ${message}\n`;
+            log.scrollTop = log.scrollHeight;
+        }
+
+        // Show alert
+        function showAlert(message, isError) {
+            const alert = document.getElementById('configAlert');
+            alert.textContent = message;
+            alert.className = isError ? 'alert alert-error' : 'alert alert-success';
+            alert.classList.remove('hidden');
+            setTimeout(() => alert.classList.add('hidden'), 5000);
+        }
+
+        // Get config from form
+        function getConfigFromForm() {
+            const seed = document.getElementById('randomSeed').value;
+            const profile = document.getElementById('profilePath').value;
+            
+            return {
+                esp32: {
+                    ip: document.getElementById('espIp').value
+                },
+                experiment: {
+                    num_events: parseInt(document.getElementById('numEvents').value),
+                    random_seed: seed ? parseInt(seed) : null,
+                    profile_path: profile || null,
+                    output_folder: document.getElementById('outputFolder').value,
+                    inter_event_delay: parseFloat(document.getElementById('interEventDelay').value)
+                },
+                routine: {
+                    frames_per_event: parseInt(document.getElementById('framesPerEvent').value),
+                    sound_duration_us: Math.round(parseFloat(document.getElementById('soundDuration').value) * 1000000),
+                    led_enabled: document.getElementById('ledEnabled').checked
+                },
+                conditions: {
+                    enforce_equal_condition_count: document.getElementById('enforceBalance').checked,
+                    mapping: {
+                        RED: document.getElementById('mappingRed').value,
+                        BLUE: document.getElementById('mappingBlue').value,
+                        GREEN: document.getElementById('mappingGreen').value,
+                        YELLOW: document.getElementById('mappingYellow').value
+                    }
+                }
+            };
+        }
+
+        // Populate form from config
+        function populateForm(config) {
+            document.getElementById('espIp').value = config.esp32.ip;
+            document.getElementById('numEvents').value = config.experiment.num_events;
+            document.getElementById('randomSeed').value = config.experiment.random_seed || '';
+            document.getElementById('profilePath').value = config.experiment.profile_path || '';
+            document.getElementById('outputFolder').value = config.experiment.output_folder;
+            document.getElementById('interEventDelay').value = config.experiment.inter_event_delay;
+            document.getElementById('framesPerEvent').value = config.routine.frames_per_event;
+            document.getElementById('soundDuration').value = config.routine.sound_duration_us / 1000000;
+            document.getElementById('ledEnabled').checked = config.routine.led_enabled;
+            document.getElementById('enforceBalance').checked = config.conditions.enforce_equal_condition_count;
+            document.getElementById('mappingRed').value = config.conditions.mapping.RED;
+            document.getElementById('mappingBlue').value = config.conditions.mapping.BLUE;
+            document.getElementById('mappingGreen').value = config.conditions.mapping.GREEN;
+            document.getElementById('mappingYellow').value = config.conditions.mapping.YELLOW;
+        }
+
+        // Save config (tab-aware)
+        async function saveConfig() {
+            try {
+                // Get config from active tab
+                const config = currentActiveTab === 'validation' 
+                    ? getValidationConfig() 
+                    : getExperimentConfig();
+                
+                const response = await fetch('/api/save-config', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({config})
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showAlert(`✓ ${currentActiveTab} config saved successfully`, false);
+                    document.getElementById('btnGenerateSchedule').disabled = false;
+                    appendLog(`Config saved to config.json (${currentActiveTab} mode)`);
+                } else {
+                    showAlert('✗ Error: ' + result.error, true);
+                }
+            } catch (error) {
+                showAlert('✗ Error saving config: ' + error.message, true);
+            }
+        }
+
+        // Load config (meta-aware)
+        async function loadConfig() {
+            try {
+                const response = await fetch('/api/load-config', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({config_path: 'config.json'})
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    populateFormWithMeta(result.config);
+                    showAlert('✓ Config loaded successfully', false);
+                    document.getElementById('btnGenerateSchedule').disabled = false;
+                    appendLog('Config loaded from config.json');
+                } else {
+                    showAlert('✗ Error: ' + result.error, true);
+                }
+            } catch (error) {
+                showAlert('✗ Error loading config: ' + error.message, true);
+            }
+        }
+
+        // Populate form with meta-awareness
+        function populateFormWithMeta(config) {
+            // Common fields
+            document.getElementById('espIp').value = config.esp32.ip;
+            document.getElementById('outputFolder').value = config.experiment.output_folder;
+            document.getElementById('profilePath').value = config.experiment.profile_path || '';
+            
+            // Check if meta exists
+            const meta = config.meta;
+            
+            if (meta && meta.mode === 'validation') {
+                // Switch to validation tab
+                switchTab('validation');
+                
+                // Populate validation fields
+                document.getElementById('firmware').value = meta.firmware || 'FW2';
+                document.getElementById('validationScenario').value = meta.validation_scenario || 'internal_noise';
+                document.getElementById('validationLedIndicator').checked = config.routine.led_enabled;
+                
+                // Signal injection fields
+                if (meta.injected_signal) {
+                    document.getElementById('injectedFreqHz').value = meta.injected_signal.freq_hz;
+                    document.getElementById('injectedChannel').value = meta.injected_signal.channel;
+                }
+                toggleSignalInjectionFields();
+                
+            } else if (meta && meta.mode === 'experiment') {
+                // Switch to experiment tab
+                switchTab('experiment');
+                
+                // Populate experiment fields
+                document.getElementById('firmware').value = meta.firmware || 'FW2';
+                document.getElementById('subjectId').value = meta.subject_id || 'P001';
+                document.getElementById('numEvents').value = config.experiment.num_events;
+                document.getElementById('randomSeed').value = config.experiment.random_seed || '';
+                document.getElementById('soundDuration').value = config.routine.sound_duration_us / 1000000;
+                document.getElementById('ledEnabled').checked = config.routine.led_enabled;
+                document.getElementById('enforceBalance').checked = config.conditions.enforce_equal_condition_count;
+                document.getElementById('interEventDelay').value = config.experiment.inter_event_delay;
+                
+                // Condition mapping
+                document.getElementById('mappingRed').value = config.conditions.mapping.RED;
+                document.getElementById('mappingBlue').value = config.conditions.mapping.BLUE;
+                document.getElementById('mappingGreen').value = config.conditions.mapping.GREEN;
+                document.getElementById('mappingYellow').value = config.conditions.mapping.YELLOW;
+                
+                // Estimate duration from frames (reverse calculation)
+                const frames = config.routine.frames_per_event;
+                const estimatedDuration = (frames * 50) / detectedSampleRate;
+                document.getElementById('duration').value = estimatedDuration.toFixed(1);
+                
+            } else {
+                // Legacy config - populate as experiment tab
+                appendLog('Loading legacy config (no meta section)');
+                document.getElementById('numEvents').value = config.experiment.num_events;
+                document.getElementById('randomSeed').value = config.experiment.random_seed || '';
+                document.getElementById('soundDuration').value = config.routine.sound_duration_us / 1000000;
+                document.getElementById('ledEnabled').checked = config.routine.led_enabled;
+                document.getElementById('enforceBalance').checked = config.conditions.enforce_equal_condition_count;
+                document.getElementById('interEventDelay').value = config.experiment.inter_event_delay;
+                document.getElementById('mappingRed').value = config.conditions.mapping.RED;
+                document.getElementById('mappingBlue').value = config.conditions.mapping.BLUE;
+                document.getElementById('mappingGreen').value = config.conditions.mapping.GREEN;
+                document.getElementById('mappingYellow').value = config.conditions.mapping.YELLOW;
+            }
+            
+            // Trigger profile preview if a profile is selected
+            if (config.experiment.profile_path) {
+                onProfileChange();
+            }
+        }
+
+        // Generate schedule
+        async function generateSchedule() {
+            try {
+                const response = await fetch('/api/generate-schedule', {method: 'POST'});
+                const result = await response.json();
+                
+                if (result.success) {
+                    showAlert(`✓ Schedule generated: ${result.schedule_length} events`, false);
+                    document.getElementById('btnRun').disabled = false;
+                    appendLog(`Schedule: ${JSON.stringify(result.counts)}`);
+                } else {
+                    showAlert('✗ Error: ' + result.error, true);
+                }
+            } catch (error) {
+                showAlert('✗ Error generating schedule: ' + error.message, true);
+            }
+        }
+
+        // Run experiment
+        async function runExperiment() {
+            try {
+                const response = await fetch('/api/run-experiment', {method: 'POST'});
+                const result = await response.json();
+                
+                if (result.success) {
+                    appendLog('Experiment started...');
+                    document.getElementById('btnRun').disabled = true;
+                    document.getElementById('btnStop').disabled = false;
+                } else {
+                    showAlert('✗ Error: ' + result.error, true);
+                }
+            } catch (error) {
+                showAlert('✗ Error starting experiment: ' + error.message, true);
+            }
+        }
+
+        // Stop experiment
+        async function stopExperiment() {
+            try {
+                const response = await fetch('/api/stop-experiment', {method: 'POST'});
+                const result = await response.json();
+                
+                if (result.success) {
+                    appendLog('⚠ ' + result.message);
+                } else {
+                    showAlert('✗ Error: ' + result.error, true);
+                }
+            } catch (error) {
+                showAlert('✗ Error stopping experiment: ' + error.message, true);
+            }
+        }
+
+        // ========== RUN ALL PROFILES ==========
+        
+        // Run validation streams for all profiles
+        async function runAllProfiles() {
+            try {
+                // Get current settings from form
+                const espIp = document.getElementById('espIp').value;
+                const firmware = document.getElementById('firmware').value;
+                const outputFolder = document.getElementById('outputFolder').value;
+                
+                // Disable button and show progress section
+                document.getElementById('btnRunAllProfiles').disabled = true;
+                document.getElementById('btnStopAllProfiles').disabled = false;
+                document.getElementById('allProfilesProgress').classList.remove('hidden');
+                document.getElementById('allProfilesResults').innerHTML = '';
+                
+                appendLog('\n🔄 Starting "Run All Profiles" validation suite...');
+                
+                const response = await fetch('/api/run-all-profiles', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        esp_ip: espIp,
+                        firmware: firmware,
+                        output_folder: outputFolder
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    appendLog(`Started: ${result.profiles.length} profiles will be validated`);
+                    appendLog(`Profiles: ${result.profiles.join(', ')}`);
+                } else {
+                    showAlert('✗ Error: ' + result.error, true);
+                    appendLog(`✗ Failed to start: ${result.error}`);
+                    document.getElementById('btnRunAllProfiles').disabled = false;
+                    document.getElementById('btnStopAllProfiles').disabled = true;
+                }
+            } catch (error) {
+                showAlert('✗ Error starting profile validation: ' + error.message, true);
+                appendLog(`✗ Exception: ${error.message}`);
+                document.getElementById('btnRunAllProfiles').disabled = false;
+                document.getElementById('btnStopAllProfiles').disabled = true;
+            }
+        }
+
+        // Refresh file list
+        async function refreshFiles() {
+            try {
+                const response = await fetch('/api/list-files');
+                const result = await response.json();
+                
+                if (result.success) {
+                    const fileList = document.getElementById('fileList');
+                    fileList.innerHTML = '';
+                    
+                    if (result.files.length === 0) {
+                        fileList.innerHTML = '<li class="file-item">No files yet</li>';
+                    } else {
+                        result.files.forEach(file => {
+                            const li = document.createElement('li');
+                            li.className = 'file-item';
+                            li.innerHTML = `
+                                <span class="file-name">${file.name}</span>
+                                <span class="file-size">${(file.size / 1024).toFixed(0)} KB</span>
+                            `;
+                            fileList.appendChild(li);
+                        });
+                    }
+                    
+                    document.getElementById('filesSummary').textContent = 
+                        `${result.total_files} files | ${(result.total_size / 1024 / 1024).toFixed(2)} MB total`;
+                }
+            } catch (error) {
+                console.error('Error refreshing files:', error);
+            }
+        }
+
+        // Load profiles list
+        async function loadProfiles() {
+            try {
+                const response = await fetch('/api/list-profiles');
+                const result = await response.json();
+                
+                if (result.success) {
+                    const select = document.getElementById('profilePath');
+                    result.profiles.forEach(profile => {
+                        const option = document.createElement('option');
+                        option.value = 'profiles/' + profile;
+                        option.textContent = profile;
+                        select.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading profiles:', error);
+            }
+        }
+
+        // Handle profile selection change
+        async function onProfileChange() {
+            const select = document.getElementById('profilePath');
+            const previewSection = document.getElementById('profilePreviewSection');
+            const filename = select.value;
+            
+            if (!filename) {
+                previewSection.classList.add('hidden');
+                return;
+            }
+            
+            const profileFilename = filename.replace('profiles/', '');
+            
+            try {
+                const response = await fetch(`/api/profile-content?filename=${encodeURIComponent(profileFilename)}`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    displayProfilePreview(profileFilename, result.content);
+                    previewSection.classList.remove('hidden');
+                    appendLog(`Profile loaded: ${profileFilename}`);
+                } else {
+                    showAlert('✗ Error loading profile: ' + result.error, true);
+                    previewSection.classList.add('hidden');
+                }
+            } catch (error) {
+                showAlert('✗ Error loading profile: ' + error.message, true);
+                previewSection.classList.add('hidden');
+            }
+        }
+
+        // Display profile preview with summary and warnings
+        function displayProfilePreview(filename, content) {
+            document.getElementById('profileFileName').textContent = filename;
+            
+            const testSignalEnabled = content.TEST_SIGNAL_ENABLE === true;
+            const loffEnabled = content.LOFF_DETECT_ENABLE === true;
+            
+            let enabledChannels = 0;
+            let testMuxChannels = 0;
+            for (let i = 1; i <= 8; i++) {
+                if (content[`CH${i}_ENABLE`]) enabledChannels++;
+                if (content[`CH${i}_MUXP`] === 'TEST') testMuxChannels++;
+            }
+            
+            const statusDiv = document.getElementById('profileStatus');
+            if (testSignalEnabled || testMuxChannels > 0) {
+                statusDiv.innerHTML = `
+                    <div class="profile-warning">
+                        ⚠️ TEST SIGNAL ACTIVE - Internal test signal generator is enabled.
+                        ${testMuxChannels > 0 ? `${testMuxChannels} channel(s) routed to TEST.` : ''}
+                        This should only be used for calibration, not real EEG recording!
+                    </div>
+                `;
+            } else {
+                statusDiv.innerHTML = `
+                    <div class="profile-ok">
+                        ✅ Normal EEG mode - Test signal is OFF, channels configured for electrode input.
+                    </div>
+                `;
+            }
+            
+            const summaryDiv = document.getElementById('profileSummary');
+            summaryDiv.innerHTML = `
+                <div class="summary-item">
+                    <div class="summary-label">Sample Rate</div>
+                    <div class="summary-value">${content.CONFIG1_SAMPLE_RATE_SPS || 'N/A'} SPS</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-label">Enabled Channels</div>
+                    <div class="summary-value">${enabledChannels}/8</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-label">Test Signal</div>
+                    <div class="summary-value ${testSignalEnabled ? 'warning' : 'ok'}">${testSignalEnabled ? '⚠️ ON' : '✅ OFF'}</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-label">Lead-Off Detection</div>
+                    <div class="summary-value">${loffEnabled ? 'ON' : 'OFF'}</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-label">Internal Reference</div>
+                    <div class="summary-value">${content.CONFIG2_INT_REF_ENABLE ? 'Enabled' : 'Disabled'}</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-label">Default Gain</div>
+                    <div class="summary-value">${content.CH1_GAIN || 24}x</div>
+                </div>
+            `;
+            
+            // Build per-channel configuration table
+            let channelTableRows = '';
+            for (let i = 1; i <= 8; i++) {
+                const enabled = content[`CH${i}_ENABLE`] === true;
+                const muxP = content[`CH${i}_MUXP`] || '-';
+                const muxN = content[`CH${i}_MUXN`] || '-';
+                const gain = content[`CH${i}_GAIN`] || '-';
+                const mode = content[`CH${i}_MODE`] || '-';
+                
+                const isTestMux = muxP === 'TEST';
+                const rowClass = enabled ? '' : 'ch-disabled-row';
+                const enableClass = enabled ? 'ch-enabled' : 'ch-disabled';
+                const muxClass = isTestMux ? 'ch-test-mux' : 'ch-value';
+                
+                channelTableRows += `
+                    <tr class="${rowClass}">
+                        <td class="ch-name">CH${i}</td>
+                        <td class="${enableClass}">${enabled ? '✅ ON' : '❌ OFF'}</td>
+                        <td class="${muxClass}">${muxP}</td>
+                        <td class="ch-value">${muxN}</td>
+                        <td class="ch-value">${enabled ? gain + 'x' : '-'}</td>
+                        <td class="ch-value">${enabled ? mode : '-'}</td>
+                    </tr>
+                `;
+            }
+            
+            // Insert channel table after summary
+            const channelTableHtml = `
+                <div class="channel-config-section">
+                    <h4>📊 Per-Channel Configuration</h4>
+                    <table class="channel-table">
+                        <thead>
+                            <tr>
+                                <th>Channel</th>
+                                <th>Enable</th>
+                                <th>MUX P</th>
+                                <th>MUX N</th>
+                                <th>Gain</th>
+                                <th>Mode</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${channelTableRows}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            
+            // Remove any existing channel table first (prevent duplicates on profile switch)
+            const existingTable = document.querySelector('.channel-config-section');
+            if (existingTable) {
+                existingTable.remove();
+            }
+            
+            // Append channel table after summary div
+            summaryDiv.insertAdjacentHTML('afterend', channelTableHtml);
+            
+            document.getElementById('profilePreviewContent').textContent = JSON.stringify(content, null, 2);
+        }
+
+        // Initialize
+        window.onload = async () => {
+            connectWebSocket();
+            await loadProfiles();  // Load profiles FIRST (so dropdown options exist)
+            await loadConfig();    // THEN load config (which may select a profile and trigger preview)
+            refreshFiles();
+            detectSampleRate();  // Auto-detect sample rate on startup
+            appendLog('Web UI initialized');
+        };
+    </script>
+</body>
+</html>

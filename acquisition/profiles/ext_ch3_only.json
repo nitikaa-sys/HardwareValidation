@@ -1,0 +1,60 @@
+{
+  "CONFIG1_SAMPLE_RATE_SPS": 16000,
+  "CONFIG2_INT_REF_ENABLE": true,
+  "CONFIG3_BIAS_MEAS_ENABLE": false,
+  "LOFF_MAGNITUDE_uA": 6,
+  "LOFF_FREQ_HZ": 32,
+  "CHOP_ENABLE": false,
+  "TEST_SIGNAL_ENABLE": false,
+  "TEST_SIGNAL_FREQ": 0,
+  "TEST_SIGNAL_AMP_2X": false,
+  "LOFF_DETECT_ENABLE": false,
+
+  "CH1_MODE": "EEG",
+  "CH1_MUXP": "SHORTED",
+  "CH1_MUXN": "SHORTED",
+  "CH1_GAIN": 12,
+  "CH1_ENABLE": true,
+
+  "CH2_MODE": "EEG",
+  "CH2_MUXP": "SHORTED",
+  "CH2_MUXN": "SHORTED",
+  "CH2_GAIN": 12,
+  "CH2_ENABLE": true,
+
+  "CH3_MODE": "EEG",
+  "CH3_MUXP": "IN3P",
+  "CH3_MUXN": "SRB1",
+  "CH3_GAIN": 12,
+  "CH3_ENABLE": true,
+
+  "CH4_MODE": "EEG",
+  "CH4_MUXP": "SHORTED",
+  "CH4_MUXN": "SHORTED",
+  "CH4_GAIN": 12,
+  "CH4_ENABLE": true,
+
+  "CH5_MODE": "EEG",
+  "CH5_MUXP": "SHORTED",
+  "CH5_MUXN": "SHORTED",
+  "CH5_GAIN": 12,
+  "CH5_ENABLE": true,
+
+  "CH6_MODE": "EEG",
+  "CH6_MUXP": "SHORTED",
+  "CH6_MUXN": "SHORTED",
+  "CH6_GAIN": 12,
+  "CH6_ENABLE": true,
+
+  "CH7_MODE": "EEG",
+  "CH7_MUXP": "SHORTED",
+  "CH7_MUXN": "SHORTED",
+  "CH7_GAIN": 12,
+  "CH7_ENABLE": true,
+
+  "CH8_MODE": "EEG",
+  "CH8_MUXP": "SHORTED",
+  "CH8_MUXN": "SHORTED",
+  "CH8_GAIN": 12,
+  "CH8_ENABLE": true
+}
