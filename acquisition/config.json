@@ -1,0 +1,33 @@
+{
+  "esp32": {
+    "ip": "node.local"
+  },
+  "experiment": {
+    "num_events": 1,
+    "random_seed": null,
+    "profile_path": "profiles/eyesopenclosed.json",
+    "output_folder": "260130",
+    "inter_event_delay": 0.5
+  },
+  "routine": {
+    "acquisition_duration_seconds": 10,
+    "sound_duration_us": 0,
+    "led_enabled": false,
+    "frames_per_event": 200
+  },
+  "conditions": {
+    "enforce_equal_condition_count": false,
+    "mapping": {
+      "RED": "VAL",
+      "BLUE": "VAL",
+      "GREEN": "VAL",
+      "YELLOW": "VAL"
+    }
+  },
+  "meta": {
+    "mode": "validation",
+    "firmware": "FW2",
+    "board": "R2",
+    "validation_scenario": "functional_tests"
+  }
+}

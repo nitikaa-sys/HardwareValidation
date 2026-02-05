@@ -13,9 +13,8 @@ online/data/
 acquisition/data/
 !acquisition/data/.gitkeep
 
-# ─── Runtime Config (Not Templates) ──────────────────────────
-online/config.json
-acquisition/config.json
+# ─── Runtime Config Examples ─────────────────────────────────
+# (config.json is now tracked - delete this section if not needed)
 
 # ─── Report Output ───────────────────────────────────────────
 *_report/
