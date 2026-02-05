@@ -26,9 +26,9 @@ HardwareAnalysis/
 ├── data/                        # Recorded .bin files (not tracked in git)
 │
 ├── legacy/                      # Legacy/reference notebooks
-│   └── Offlinehardwareanalysis.ipynb
+│   └── offline_hardware_analysis.ipynb
 │
-└── HardwareValidation.ipynb     # Main interactive analysis notebook
+└── hardware_validation.ipynb    # Main interactive analysis notebook
 ```
 
 ---
@@ -91,7 +91,7 @@ Pre-configured hardware register settings in `acquisition/profiles/`:
 | `all_normal.json` | External noise test (floating inputs) |
 | `test_signal.json` | Internal test signal generation |
 | `ext_ch1_only.json` | Single channel external input |
-| `eyesopenclosed.json` | Functional EEG configuration |
+| `eyes_open_closed.json` | Functional EEG configuration |
 
 ---
 
@@ -148,7 +148,7 @@ The analysis system processes recorded .bin files and generates PDF reports.
 Use the **interactive notebook** (recommended):
 
 ```bash
-jupyter notebook HardwareValidation.ipynb
+jupyter notebook hardware_validation.ipynb
 ```
 
 **Steps:**
@@ -351,5 +351,5 @@ python -c "from analysis.pipeline import run_pipeline"
 
 ## 📚 Documentation
 
-- `HardwareValidation.ipynb` - Interactive analysis with explanations
-- `legacy/Offlinehardwareanalysis.ipynb` - Legacy reference notebook
+- `hardware_validation.ipynb` - Interactive analysis with explanations
+- `legacy/offline_hardware_analysis.ipynb` - Legacy reference notebook
