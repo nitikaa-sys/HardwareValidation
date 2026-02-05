@@ -229,13 +229,10 @@ Features:
 
 ### Functional EEG Tests
 - **Purpose:** Real brain signal acquisition
-- **Tests:**
-  - Eyes Open (FUNEO): Baseline activity
-  - Eyes Closed (FUNEC): Alpha enhancement (7-13 Hz)
-  - Eye Blinks (FUNEB): Artifact patterns
+- **Tests:** Eyes Open (FUNEO), Eyes Closed (FUNEC), Eye Blinks (FUNEB)
 
 ### Eyes Open vs Eyes Closed Montage
-- **Purpose:** Compare alpha modulation
+- Generates a graph of the power spectral density and time series for different electrode positions in the montage.
 
 ---
 
