@@ -1,8 +1,8 @@
-# 🔬 Hardware Validation System
+# Hardware Validation System
 
 A comprehensive system for acquiring and analyzing EEG data from hardware.
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 HardwareAnalysis/
@@ -33,11 +33,11 @@ HardwareAnalysis/
 
 ---
 
-## 🟢 Acquisition System (Data Collection)
+## Acquisition System (Data Collection)
 
 The acquisition system provides live data collection from hardware via USB.
 
-### 🎯 Two Ways to Run Acquisition
+### Two Ways to Run Acquisition
 
 | Method | Best For | Description |
 |--------|----------|-------------|
@@ -109,7 +109,7 @@ The `acquisition/config.json` file controls all experiment settings.
   "experiment": {
     "num_events": 1,
     "random_seed": null,
-    "profile_path": "profiles/eyesopenclosed.json",
+    "profile_path": "profiles/eyes_open_closed.json",
     "output_folder": "260130",
     "inter_event_delay": 0.5
   },
@@ -139,11 +139,11 @@ The `acquisition/config.json` file controls all experiment settings.
 
 ---
 
-## 🔵 Analysis System (Offline Processing)
+## Analysis System (Offline Processing)
 
 The analysis system processes recorded .bin files and generates PDF reports.
 
-### 🎯 How to Run Analysis
+### How to Run Analysis
 
 Use the **interactive notebook** (recommended):
 
@@ -213,7 +213,7 @@ Features:
 
 ---
 
-## 📊 Test Categories
+## Test Categories
 
 ### A1: Internal Noise (Shorted Inputs)
 - **Purpose:** Measure ADC intrinsic noise floor
@@ -243,7 +243,7 @@ Features:
 
 ---
 
-## 📈 Output
+## Output
 
 Each analysis generates:
 
@@ -260,17 +260,17 @@ Reports are saved to `{bin_file_directory}/reports/`
 
 ---
 
-## 🔧 Binary File Format
+## Binary File Format
 
 The framestream format:
 - **Frame size:** 1416 bytes
-- **Structure:** 16-byte header + 50 packets × 28 bytes
+- **Structure:** 16-byte header + 50 packets x 28 bytes
 - **Samples per frame:** 50
-- **Channels:** 8 × 24-bit ADC values
+- **Channels:** 8 x 24-bit ADC values
 
 ---
 
-## ⚙️ ADC Configuration
+## ADC Configuration
 
 ### Parameters (in `analysis/preprocess.py`)
 
@@ -284,16 +284,16 @@ GAIN = 12            # PGA gain
 
 ```python
 ELECTRODE_MAP = {
-    2: "Fp1",   # Hardware Ch2 → Frontal left
-    3: "Fp2",   # Hardware Ch3 → Frontal right
-    4: "O1",    # Hardware Ch4 → Occipital left
-    5: "O2",    # Hardware Ch5 → Occipital right
+    2: "Fp1",   # Hardware Ch2 -> Frontal left
+    3: "Fp2",   # Hardware Ch3 -> Frontal right
+    4: "O1",    # Hardware Ch4 -> Occipital left
+    5: "O2",    # Hardware Ch5 -> Occipital right
 }
 ```
 
 ---
 
-## 📦 Dependencies
+## Dependencies
 
 ```
 numpy
@@ -311,7 +311,7 @@ pip install numpy scipy matplotlib fastapi uvicorn websockets
 
 ---
 
-## 📝 File Naming Convention
+## File Naming Convention
 
 ```
 YYMMDD_HHMMSS_FWX_RY_COND_NNNN_NNk.bin
@@ -331,7 +331,7 @@ Example: `260130_140604_FW2_R2_INT_1600_16k.bin`
 
 ---
 
-## 🐛 Troubleshooting
+## Troubleshooting
 
 **Import errors:**
 ```bash
@@ -349,7 +349,7 @@ python -c "from analysis.pipeline import run_pipeline"
 
 ---
 
-## 📚 Documentation
+## Documentation
 
 - `hardware_validation.ipynb` - Interactive analysis with explanations
 - `legacy/offline_hardware_analysis.ipynb` - Legacy reference notebook
