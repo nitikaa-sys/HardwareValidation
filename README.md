@@ -1,20 +1,19 @@
-# 🔬 ADS1299 Hardware Validation System
+# 🔬 Hardware Validation System
 
-A comprehensive system for acquiring and analyzing EEG data from ADS1299-based hardware.
+A comprehensive system for acquiring and analyzing EEG data from hardware.
 
 ## 📁 Project Structure
 
 ```
 HardwareAnalysis/
-├── online/                      # Live data acquisition (Web UI)
+├── acquisition/                 # Live data acquisition (Web UI)
 │   ├── web_ui.py               # FastAPI web interface
 │   ├── run_experiment.py       # CLI experiment runner
 │   ├── config.json             # Active configuration file
-│   ├── profiles/               # ADS1299 register configurations
-│   ├── static/                 # Web UI HTML/CSS
-│   └── data/                   # Recorded .bin files
+│   ├── profiles/               # Hardware register configurations
+│   └── static/                 # Web UI HTML/CSS
 │
-├── offline/                     # Offline analysis package
+├── analysis/                    # Offline analysis package
 │   ├── __init__.py
 │   ├── pipeline.py             # Main analysis orchestrator
 │   ├── decode_bin.py           # Binary framestream parser
@@ -24,17 +23,21 @@ HardwareAnalysis/
 │   ├── raw_data_checks.py      # Data quality checks
 │   └── report.py               # PDF report generation
 │
-├── HardwareValidation.ipynb     # Interactive analysis notebook
-└── Offlinehardwareanalysis.ipynb  # Legacy notebook (reference)
+├── data/                        # Recorded .bin files (not tracked in git)
+│
+├── legacy/                      # Legacy/reference notebooks
+│   └── Offlinehardwareanalysis.ipynb
+│
+└── HardwareValidation.ipynb     # Main interactive analysis notebook
 ```
 
 ---
 
-## 🟢 Online System (Data Acquisition)
+## 🟢 Acquisition System (Data Collection)
 
-The online system provides live data acquisition from ADS1299 hardware via USB.
+The acquisition system provides live data collection from hardware via USB.
 
-### 🎯 Two Ways to Run Online Acquisition
+### 🎯 Two Ways to Run Acquisition
 
 | Method | Best For | Description |
 |--------|----------|-------------|
@@ -48,7 +51,7 @@ The online system provides live data acquisition from ADS1299 hardware via USB.
 Start the web interface:
 
 ```bash
-cd online
+cd acquisition
 python web_ui.py
 ```
 
@@ -67,7 +70,7 @@ Then open `http://localhost:8000` in your browser.
 For scripted/batch acquisition:
 
 ```bash
-cd online
+cd acquisition
 python run_experiment.py --profile profiles/all_shorted.json --duration 10
 ```
 
@@ -80,7 +83,7 @@ python run_experiment.py --help
 
 ### Profiles
 
-Pre-configured ADS1299 register settings in `online/profiles/`:
+Pre-configured hardware register settings in `acquisition/profiles/`:
 
 | Profile | Description |
 |---------|-------------|
@@ -94,31 +97,31 @@ Pre-configured ADS1299 register settings in `online/profiles/`:
 
 ### Configuration (config.json)
 
-The `online/config.json` file controls all experiment settings. Edit this file directly.
+The `acquisition/config.json` file controls all experiment settings.
 
 **Structure:**
 
 ```json
 {
   "esp32": {
-    "ip": "node.local"          // ESP32 IP address or hostname
+    "ip": "node.local"
   },
   "experiment": {
-    "num_events": 1,            // Number of acquisition events
-    "random_seed": null,        // For reproducibility (null = random)
+    "num_events": 1,
+    "random_seed": null,
     "profile_path": "profiles/eyesopenclosed.json",
-    "output_folder": "260130",  // Session name for data folder
-    "inter_event_delay": 0.5    // Delay between events (seconds)
+    "output_folder": "260130",
+    "inter_event_delay": 0.5
   },
   "routine": {
-    "acquisition_duration_seconds": 10,  // Recording duration
-    "sound_duration_us": 0,     // Sound trigger duration (0 = off)
-    "led_enabled": false,       // LED indicator on/off
-    "frames_per_event": 200     // Auto-calculated if duration set
+    "acquisition_duration_seconds": 10,
+    "sound_duration_us": 0,
+    "led_enabled": false,
+    "frames_per_event": 200
   },
   "conditions": {
     "enforce_equal_condition_count": false,
-    "mapping": {                // LED color → condition label
+    "mapping": {
       "RED": "VAL",
       "BLUE": "VAL",
       "GREEN": "VAL",
@@ -126,7 +129,7 @@ The `online/config.json` file controls all experiment settings. Edit this file d
     }
   },
   "meta": {
-    "mode": "validation",       // "validation" or "experiment"
+    "mode": "validation",
     "firmware": "FW2",
     "board": "R2",
     "validation_scenario": "functional_tests"
@@ -136,11 +139,11 @@ The `online/config.json` file controls all experiment settings. Edit this file d
 
 ---
 
-## 🔵 Offline System (Analysis)
+## 🔵 Analysis System (Offline Processing)
 
-The offline system analyzes recorded .bin files and generates PDF reports.
+The analysis system processes recorded .bin files and generates PDF reports.
 
-### 🎯 How to Run Offline Analysis
+### 🎯 How to Run Analysis
 
 Use the **interactive notebook** (recommended):
 
@@ -164,7 +167,7 @@ jupyter notebook HardwareValidation.ipynb
 ### Python API
 
 ```python
-from offline.pipeline import run_pipeline
+from analysis.pipeline import run_pipeline
 from pathlib import Path
 
 # Run full analysis
@@ -183,13 +186,14 @@ print(f"Was sorted: {results['was_sorted']}")
 
 ### Publication-Style Plots
 
-For Eyes Open vs Eyes Closed comparison, use the new publication-style functions:
+For Eyes Open vs Eyes Closed comparison:
 
 ```python
-from offline.plots import (
+from analysis.plots import (
     plot_eo_ec_publication,           # Combined PSD + Montage
     plot_eo_ec_publication_montage,   # Just montage
     plot_eo_ec_publication_psd,       # Just PSD
+    plot_eo_ec_publication_complete,  # Full 3-panel figure
 )
 
 # Generate clean, paper-ready figure
@@ -258,7 +262,7 @@ Reports are saved to `{bin_file_directory}/reports/`
 
 ## 🔧 Binary File Format
 
-The ADS1299 framestream format:
+The framestream format:
 - **Frame size:** 1416 bytes
 - **Structure:** 16-byte header + 50 packets × 28 bytes
 - **Samples per frame:** 50
@@ -268,7 +272,7 @@ The ADS1299 framestream format:
 
 ## ⚙️ ADC Configuration
 
-### Parameters (in `offline/preprocess.py`)
+### Parameters (in `analysis/preprocess.py`)
 
 ```python
 FS_HZ = 16000        # Sampling rate (Hz)
@@ -276,7 +280,7 @@ VREF_V = 4.5         # Reference voltage (V)
 GAIN = 12            # PGA gain
 ```
 
-### Electrode Mapping (in `offline/plots.py`)
+### Electrode Mapping (in `analysis/plots.py`)
 
 ```python
 ELECTRODE_MAP = {
@@ -295,7 +299,7 @@ ELECTRODE_MAP = {
 numpy
 scipy
 matplotlib
-fastapi (for online/web_ui.py)
+fastapi (for acquisition/web_ui.py)
 uvicorn
 websockets
 ```
@@ -332,7 +336,7 @@ Example: `260130_140604_FW2_R2_INT_1600_16k.bin`
 **Import errors:**
 ```bash
 cd HardwareAnalysis
-python -c "from offline.pipeline import run_pipeline"
+python -c "from analysis.pipeline import run_pipeline"
 ```
 
 **File not found:**
@@ -348,4 +352,4 @@ python -c "from offline.pipeline import run_pipeline"
 ## 📚 Documentation
 
 - `HardwareValidation.ipynb` - Interactive analysis with explanations
-- `Offlinehardwareanalysis.ipynb` - Legacy reference notebook
+- `legacy/Offlinehardwareanalysis.ipynb` - Legacy reference notebook
