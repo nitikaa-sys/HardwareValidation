@@ -160,7 +160,7 @@ jupyter notebook hardware_validation.ipynb
 - See plots inline
 - Easy parameter editing
 - Markdown documentation for each test
-- Publication-style Eyes Open vs Eyes Closed comparison plots
+- Eyes Open vs Eyes Closed comparison plots
 
 ---
 
@@ -181,35 +181,6 @@ results = run_pipeline(
 print(f"Frames: {results['meta']['n_frames']}")
 print(f"Was sorted: {results['was_sorted']}")
 ```
-
----
-
-### Publication-Style Plots
-
-For Eyes Open vs Eyes Closed comparison:
-
-```python
-from analysis.plots import (
-    plot_eo_ec_publication,           # Combined PSD + Montage
-    plot_eo_ec_publication_montage,   # Just montage
-    plot_eo_ec_publication_psd,       # Just PSD
-    plot_eo_ec_publication_complete,  # Full 3-panel figure
-)
-
-# Generate clean, paper-ready figure
-fig = plot_eo_ec_publication(
-    counts_eo, counts_ec,
-    fs_hz=16000,
-    duration_s=5.0,
-)
-plt.show()
-```
-
-Features:
-- **Linear frequency axis** (0, 5, 10, 15... Hz)
-- **Linear PSD y-axis** (not logarithmic)
-- **Stacked montage** with Eyes Open | Eyes Closed side-by-side
-- **Clean scale bars**
 
 ---
 
