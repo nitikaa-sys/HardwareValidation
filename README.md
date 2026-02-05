@@ -154,13 +154,13 @@ jupyter notebook hardware_validation.ipynb
 **Steps:**
 1. Run the **Setup** cell to import packages
 2. Edit **File Paths** to point to your .bin files
-3. Run any analysis cell (A1, A2, B, C, D)
+3. Run any analysis cell
 
 **Features:**
 - See plots inline
 - Easy parameter editing
 - Markdown documentation for each test
-- Publication-style EO vs EC comparison plots
+- Publication-style Eyes Open vs Eyes Closed comparison plots
 
 ---
 
@@ -208,38 +208,34 @@ plt.show()
 Features:
 - **Linear frequency axis** (0, 5, 10, 15... Hz)
 - **Linear PSD y-axis** (not logarithmic)
-- **Stacked montage** with EO | EC side-by-side
+- **Stacked montage** with Eyes Open | Eyes Closed side-by-side
 - **Clean scale bars**
 
 ---
 
 ## Test Categories
 
-### A1: Internal Noise (Shorted Inputs)
+### Internal Noise (Shorted Inputs)
 - **Purpose:** Measure ADC intrinsic noise floor
 - **Setup:** All inputs shorted
-- **Expected:** Very low noise, flat spectrum
 
-### A2: External Noise (Floating Inputs)
+### External Noise (Floating Inputs)
 - **Purpose:** Measure environmental interference
 - **Setup:** Inputs disconnected (floating)
-- **Expected:** 50Hz mains pickup, higher noise
 
-### B: Known Signal Injection (KSI)
+### Known Signal Injection (KSI)
 - **Purpose:** Verify channel integrity
 - **Setup:** 40Hz signal injected into specific channel
-- **Expected:** Clear 40Hz peak on target channel
 
-### C: Functional EEG Tests
+### Functional EEG Tests
 - **Purpose:** Real brain signal acquisition
 - **Tests:**
   - Eyes Open (FUNEO): Baseline activity
   - Eyes Closed (FUNEC): Alpha enhancement (7-13 Hz)
   - Eye Blinks (FUNEB): Artifact patterns
 
-### D: EO vs EC Montage
+### Eyes Open vs Eyes Closed Montage
 - **Purpose:** Compare alpha modulation
-- **Expected:** Stronger alpha in Eyes Closed, especially O1/O2
 
 ---
 
