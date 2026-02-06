@@ -61,11 +61,12 @@ from .report import (
 
 
 def run_pipeline(
-    bin_path: Path,
+    source: Path | bytes,
     *,
     display_plots: bool = True,
     export_pdf_report: bool = True,
     out_dir: Path | None = None,
+    source_name: str | None = None,
 ) -> dict:
     """
     Execute full hardware validation analysis pipeline.
@@ -73,16 +74,21 @@ def run_pipeline(
     This is the main entry point that reproduces the notebook's
     analyze_bin_file() function behavior exactly.
     
+    Supports both file path (offline) and raw bytes (online live capture).
+    
     Parameters
     ----------
-    bin_path : Path
-        Path to the .bin file to analyze
+    source : Path or bytes
+        Path to the .bin file OR raw frame bytes from live capture
     display_plots : bool
         If True, display plots interactively
     export_pdf_report : bool
-        If True, export PDF report
+        If True, export PDF report (only if source is Path)
     out_dir : Path, optional
         Output directory for PDF. Default: bin_path.parent / "reports"
+    source_name : str, optional
+        Display name for the source (used when source is bytes).
+        Examples: "Internal Noise", "External Noise", "Live Capture"
     
     Returns
     -------
@@ -96,32 +102,70 @@ def run_pipeline(
         - was_sorted: whether frames were reordered
         - plots: list of generated figures
     """
-    bin_path = Path(bin_path)
+    from datetime import datetime
+    
+    # Determine if source is bytes or path
+    is_bytes_source = isinstance(source, (bytes, bytearray))
+    
+    if is_bytes_source:
+        # Live capture mode: source is raw bytes
+        bin_bytes = bytes(source)
+        bin_path = None
+        
+        # Build default metadata for live capture
+        display_name = source_name if source_name else "Live Capture"
+        filename_meta = {
+            'firmware': 'FW2',
+            'board': 'R2',
+            'condition': source_name if source_name else 'LIVE',
+            'date': datetime.now().strftime('%y%m%d'),
+            'time': datetime.now().strftime('%H%M%S'),
+            'n_frames_declared': 0,  # Unknown for live
+            'sampling_rate_khz': 16,  # Default
+            'display_name': display_name,
+        }
+        test_type = detect_test_type(filename_meta)
+        
+        print("=" * 80)
+        print(" LIVE CAPTURE METADATA ".center(80, "="))
+        print("=" * 80)
+        print(f"Source:     {display_name}")
+        print(f"Bytes:      {len(bin_bytes):,}")
+        print(f"Timestamp:  {filename_meta['date']} {filename_meta['time']}")
+        
+        # Disable PDF export for bytes (no file path)
+        if export_pdf_report:
+            print("\n[NOTE] PDF export disabled for live capture (no file path)")
+            export_pdf_report = False
+    else:
+        # File mode: source is path
+        bin_path = Path(source)
+        
+        # ═══════════════════════════════════════════════════════════════════
+        # STEP 1: PARSE METADATA (FIRST!)
+        # ═══════════════════════════════════════════════════════════════════
+        filename_meta = parse_filename_metadata(bin_path)
+        test_type = detect_test_type(filename_meta)
+        
+        print("=" * 80)
+        print(" FILE METADATA ".center(80, "="))
+        print("=" * 80)
+        print(f"File:       {bin_path.name}")
+        print(f"Firmware:   {filename_meta['firmware']}")
+        print(f"Board:      {filename_meta['board']}")
+        print(f"Condition:  {filename_meta.get('condition', 'Unknown')}")
+        print(f"Date:       {filename_meta['date']} {filename_meta.get('time', '')}")
+        print(f"Declared:   {filename_meta['n_frames_declared']} frames @ {filename_meta['sampling_rate_khz']} kHz")
+        
+        # Load bytes from file
+        bin_bytes = bin_path.read_bytes()
     
     # ═══════════════════════════════════════════════════════════════════
-    # STEP 1: PARSE METADATA (FIRST!)
-    # ═══════════════════════════════════════════════════════════════════
-    filename_meta = parse_filename_metadata(bin_path)
-    test_type = detect_test_type(filename_meta)
-    
-    print("=" * 80)
-    print(" FILE METADATA ".center(80, "="))
-    print("=" * 80)
-    print(f"File:       {bin_path.name}")
-    print(f"Firmware:   {filename_meta['firmware']}")
-    print(f"Board:      {filename_meta['board']}")
-    print(f"Condition:  {filename_meta.get('condition', 'Unknown')}")
-    print(f"Date:       {filename_meta['date']} {filename_meta.get('time', '')}")
-    print(f"Declared:   {filename_meta['n_frames_declared']} frames @ {filename_meta['sampling_rate_khz']} kHz")
-    
-    # ═══════════════════════════════════════════════════════════════════
-    # STEP 2: LOAD & PARSE BINARY
+    # STEP 2: PARSE BINARY
     # ═══════════════════════════════════════════════════════════════════
     print("\n" + "─" * 80)
-    print("LOADING & PARSING BINARY")
+    print("PARSING BINARY")
     print("─" * 80)
-    
-    bin_bytes = bin_path.read_bytes()
     print(f"Loaded {len(bin_bytes):,} bytes")
     
     counts_all, meta = parse_ads1299_framestream_bin_bytes_strict_1416(bin_bytes)
