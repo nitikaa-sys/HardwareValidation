@@ -28,7 +28,8 @@ HardwareAnalysis/
 ├── legacy/                      # Legacy/reference notebooks
 │   └── offline_hardware_analysis.ipynb
 │
-└── hardware_validation.ipynb    # Main interactive analysis notebook
+├── hardware_validation.ipynb    # Offline analysis (from .bin files)
+└── online_hardware_validation.ipynb  # Live acquisition + analysis
 ```
 
 ---
@@ -313,7 +314,31 @@ python -c "from analysis.pipeline import run_pipeline"
 
 ---
 
+## Validation Notebooks
+
+Two notebooks for hardware validation:
+
+| Notebook | Purpose | Input |
+|----------|---------|-------|
+| `hardware_validation.ipynb` | Offline analysis | Pre-recorded .bin files |
+| `online_hardware_validation.ipynb` | Live acquisition + analysis | ESP32 live stream |
+
+Both use **identical analysis** (`run_pipeline()`) and produce the **same PDF reports**.
+
+### Configurable Parameters
+
+Edit these in the notebook configuration cell:
+
+```python
+SAMPLING_RATE_HZ = 16000    # ADS1299: 250, 500, 1000, 2000, 4000, 8000, 16000
+GAIN = 24                   # PGA gain: 1, 2, 4, 6, 8, 12, 24
+MAINS_FREQ_HZ = 50.0        # Notch filter: 50 Hz (EU) or 60 Hz (US)
+```
+
+---
+
 ## Documentation
 
-- `hardware_validation.ipynb` - Interactive analysis with explanations
+- `hardware_validation.ipynb` - Offline analysis from .bin files
+- `online_hardware_validation.ipynb` - Live acquisition + analysis
 - `legacy/offline_hardware_analysis.ipynb` - Legacy reference notebook
