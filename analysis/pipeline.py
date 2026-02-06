@@ -67,6 +67,10 @@ def run_pipeline(
     export_pdf_report: bool = True,
     out_dir: Path | None = None,
     source_name: str | None = None,
+    # Configurable hardware parameters
+    fs_hz: int | None = None,
+    gain: int | None = None,
+    mains_freq_hz: float = 50.0,
 ) -> dict:
     """
     Execute full hardware validation analysis pipeline.
@@ -89,6 +93,12 @@ def run_pipeline(
     source_name : str, optional
         Display name for the source (used when source is bytes).
         Examples: "Internal Noise", "External Noise", "Live Capture"
+    fs_hz : int, optional
+        Sampling rate in Hz. Default: use FS_HZ from preprocess module (16000)
+    gain : int, optional
+        PGA gain setting. Default: use GAIN from preprocess module (24)
+    mains_freq_hz : float
+        Mains frequency for notch filter. Default: 50.0 (EU). Use 60.0 for US.
     
     Returns
     -------
@@ -103,6 +113,10 @@ def run_pipeline(
         - plots: list of generated figures
     """
     from datetime import datetime
+    
+    # Use defaults if not specified
+    if fs_hz is None:
+        fs_hz = FS_HZ
     
     # Determine if source is bytes or path
     is_bytes_source = isinstance(source, (bytes, bytearray))
@@ -170,7 +184,7 @@ def run_pipeline(
     
     counts_all, meta = parse_ads1299_framestream_bin_bytes_strict_1416(bin_bytes)
     print(f"Parsed {meta['n_frames']} frames ({meta['n_samples']} samples)")
-    print(f"Duration: {duration_from_counts(counts_all, FS_HZ):.3f} s")
+    print(f"Duration: {duration_from_counts(counts_all, fs_hz):.3f} s")
 
     # ═══════════════════════════════════════════════════════════════════
     # STEP 3: RAW DATA QUALITY CHECKS (BEFORE ANY SORTING!)
@@ -248,7 +262,7 @@ def run_pipeline(
 
     # ═══ CHECK 6: Δt1 DISTRIBUTION SUMMARY (from RAW) ═══
     print(f"\n[Check 6] Δt1 Distribution (RAW data tally):")
-    tally_raw = print_dt1_tally_table(meta, fs_hz=FS_HZ)
+    tally_raw = print_dt1_tally_table(meta, fs_hz=fs_hz)
 
     # ═══ SAVE RAW META FOR PLOTS (CRITICAL!) ═══
     meta_raw = copy.deepcopy(meta)  # Deep copy to preserve RAW state
@@ -285,7 +299,7 @@ def run_pipeline(
         print("POST-SORT QUALITY CHECK")
         print("─" * 80)
         
-        dropped_samples = estimate_dropped_samples_1sd(meta, fs_hz=FS_HZ)
+        dropped_samples = estimate_dropped_samples_1sd(meta, fs_hz=fs_hz)
         print(f"\n[Check 7] Dropped Samples Estimation (1 SD method):")
         print(f"    [NOTE] Calculated from SORTED timeline (negative Δt1 removed by sorting)")
         print(f"    Mean Δt1: {dropped_samples['mean_dt1_us']:.1f} µs")
@@ -359,10 +373,10 @@ def run_pipeline(
     ))
 
     print("  1. Timing signals (t1, t2, t3)...")
-    plots.append(plot_timing_signals(meta_raw, fs_hz=FS_HZ))
+    plots.append(plot_timing_signals(meta_raw, fs_hz=fs_hz))
 
     print("  2. Timing analysis (histogram + tally)...")
-    plots.append(plot_timing_analysis(meta_raw, fs_hz=FS_HZ))
+    plots.append(plot_timing_analysis(meta_raw, fs_hz=fs_hz))
 
     print("  3. Frame order verification...")
     plots.append(plot_frame_order_verification(meta))
@@ -370,7 +384,7 @@ def run_pipeline(
     print("  4. All-channels overlay...")
     plots.append(plot_all_channels_overlay(
         counts_all,
-        fs_hz=FS_HZ,
+        fs_hz=fs_hz,
         title_prefix=title,
         band_max_hz=BAND_MAX_HZ_DEFAULT,
         test_type=test_type,
@@ -381,7 +395,7 @@ def run_pipeline(
         print(f"  {ch+4}. Channel {ch}...")
         uv_ch = preprocess_channel_uv(
             counts_all[ch-1],
-            fs_hz=FS_HZ,
+            fs_hz=fs_hz,
             channel_idx=ch-1,
             apply_notch=True,
             test_type=test_type,
@@ -390,7 +404,7 @@ def run_pipeline(
             ch=ch,
             uv_ch=uv_ch,
             counts_ch=counts_all[ch-1],
-            fs_hz=FS_HZ,
+            fs_hz=fs_hz,
             title_prefix=title,
             band_max_hz=BAND_MAX_HZ_DEFAULT,
         ))
