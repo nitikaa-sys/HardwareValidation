@@ -27,7 +27,8 @@ from .streaming import (
     run_config_experiment,
     run_experiment,
     stream_event,
-    background_save
+    background_save,
+    capture_live_stream
 )
 from .config import (
     load_config,
@@ -61,6 +62,7 @@ __all__ = [
     "run_experiment",
     "stream_event",
     "background_save",
+    "capture_live_stream",
     
     # Config
     "load_config",

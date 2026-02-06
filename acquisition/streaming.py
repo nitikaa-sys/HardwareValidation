@@ -44,6 +44,200 @@ from .naming import (
 )
 
 
+async def capture_live_stream(
+    client: HardwareClient,
+    duration_seconds: float,
+    sample_rate_sps: int = 16000,
+    led_color: str = "LED_OFF",
+    sound_duration_us: int = 0
+) -> tuple:
+    """
+    Capture live EEG stream via WebSocket for online analysis.
+    
+    Uses the routines/control API (same as experiments).
+    Returns raw frame bytes and info dict with timing headers.
+    
+    Args:
+        client: HardwareClient instance (already connected)
+        duration_seconds: Duration to capture in seconds
+        sample_rate_sps: Sample rate in Hz (default 16000)
+        led_color: LED color or "LED_OFF" (default "LED_OFF")
+        sound_duration_us: Sound duration in microseconds (default 0)
+        
+    Returns:
+        Tuple of (sample_bytes: bytes, raw_frames_bytes: bytes, info: dict)
+        - sample_bytes: Extracted sample data (27 bytes/sample × N samples)
+        - raw_frames_bytes: Raw 1416-byte frames concatenated
+        - info: Dict with timing info, frame counts, header arrays
+    """
+    import struct
+    from datetime import datetime
+    
+    # Calculate frames needed
+    target_samples = int(round(sample_rate_sps * duration_seconds))
+    target_frames = (target_samples + SAMPLES_PER_FRAME - 1) // SAMPLES_PER_FRAME
+    target_samples_exact = target_frames * SAMPLES_PER_FRAME
+    
+    print(f"[CAPTURE] Starting live stream capture...")
+    print(f"    Duration: {duration_seconds}s")
+    print(f"    Sample rate: {sample_rate_sps} SPS")
+    print(f"    Target frames: {target_frames}")
+    print(f"    Target samples: {target_samples_exact}")
+    
+    # Prepare routine
+    print(f"[1/3] Preparing routine...")
+    if not client.prepare_routine(target_frames, led_color, sound_duration_us):
+        raise RuntimeError("Prepare routine failed")
+    print(f"    Prepared")
+    
+    # Brief delay for hardware to settle
+    await asyncio.sleep(0.2)
+    
+    # Execute routine
+    print(f"[2/3] Executing routine...")
+    if not client.execute_routine():
+        raise RuntimeError("Execute routine failed")
+    print(f"    Started streaming")
+    
+    # Brief delay for route activation
+    await asyncio.sleep(0.3)
+    
+    # Receive frames via WebSocket
+    print(f"[3/3] Connecting to WebSocket at {client.ws_url}...")
+    
+    # Storage
+    raw_frames = []
+    sample_buf = bytearray()
+    
+    # Header arrays for timing analysis
+    t1_list, t2_list, t3_list = [], [], []
+    pc_list, ss_list, ts_list = [], [], []
+    
+    # Counters
+    recv_frames = 0
+    rejected = {"bad_size": 0, "t1_zero": 0, "bad_packet_count": 0}
+    timeouts = 0
+    t_start = time.time()
+    last_rx = time.time()
+    
+    try:
+        async with websockets.connect(client.ws_url, ping_interval=20, ping_timeout=10) as ws:
+            print(f"    WebSocket connected")
+            
+            while recv_frames < target_frames:
+                # Check for timeout
+                if time.time() - last_rx > DEFAULT_TIMEOUT_NO_DATA:
+                    print(f"    Timeout: no data for {DEFAULT_TIMEOUT_NO_DATA}s")
+                    break
+                
+                # Receive with timeout
+                try:
+                    msg = await asyncio.wait_for(ws.recv(), timeout=0.5)
+                except asyncio.TimeoutError:
+                    timeouts += 1
+                    continue
+                
+                if not isinstance(msg, (bytes, bytearray)):
+                    continue
+                
+                last_rx = time.time()
+                frame_size = len(msg)
+                
+                # Validate frame size
+                if frame_size != FRAME_TARGET_SIZE:
+                    rejected["bad_size"] += 1
+                    continue
+                
+                frame = bytes(msg)
+                
+                # Parse 16-byte header
+                t1 = struct.unpack_from('<I', frame, 0)[0]
+                t2 = frame[4]
+                t3 = frame[5]
+                packet_count = struct.unpack_from('<H', frame, 6)[0]
+                samples_sent = struct.unpack_from('<I', frame, 8)[0]
+                total_samples = struct.unpack_from('<I', frame, 12)[0]
+                
+                # Validate t1 (should be non-zero)
+                if t1 == 0:
+                    rejected["t1_zero"] += 1
+                    continue
+                
+                # Validate packet count
+                if packet_count != SAMPLES_PER_FRAME:
+                    rejected["bad_packet_count"] += 1
+                    continue
+                
+                # Store header values
+                t1_list.append(t1)
+                t2_list.append(t2)
+                t3_list.append(t3)
+                pc_list.append(packet_count)
+                ss_list.append(samples_sent)
+                ts_list.append(total_samples)
+                
+                # Store raw frame
+                raw_frames.append(frame)
+                
+                # Extract sample bytes (skip header, strip padding)
+                payload = frame[FRAME_HEADER_SIZE:]  # 1400 bytes
+                for i in range(SAMPLES_PER_FRAME):
+                    pkt = payload[i * 28:(i + 1) * 28]
+                    sample_buf.extend(pkt[:27])  # 27 bytes per sample (drop 1 padding)
+                
+                recv_frames += 1
+                
+                # Progress output every 100 frames
+                if recv_frames % 100 == 0:
+                    elapsed = time.time() - t_start
+                    fps = recv_frames / elapsed if elapsed > 0 else 0
+                    samples_so_far = len(sample_buf) // 27
+                    print(f"    Frame {recv_frames}/{target_frames} | {fps:.0f} fps | {samples_so_far} samples")
+    
+    except websockets.exceptions.ConnectionClosed as e:
+        print(f"    WebSocket closed: {e}")
+    except Exception as e:
+        print(f"    Error: {e}")
+    
+    # Build info dict
+    elapsed = time.time() - t_start
+    received_samples = len(sample_buf) // 27
+    
+    import numpy as np
+    
+    info = {
+        "fs_hz": sample_rate_sps,
+        "duration_s_requested": duration_seconds,
+        "duration_s_measured": elapsed,
+        "target_frames": target_frames,
+        "target_samples_exact": target_samples_exact,
+        "received_frames": recv_frames,
+        "received_samples": received_samples,
+        "received_bytes": len(sample_buf),
+        "timeouts": timeouts,
+        "rejected_frames": dict(rejected),
+        "timestamp": datetime.now().isoformat(timespec="seconds"),
+        "samples_per_frame": SAMPLES_PER_FRAME,
+        "frame_bytes": FRAME_TARGET_SIZE,
+        "hdr": {
+            "t1_first_drdy_us": np.asarray(t1_list, dtype=np.uint32),
+            "t2_last_drdy_delta_4us": np.asarray(t2_list, dtype=np.uint8),
+            "t3_tx_ready_delta_4us": np.asarray(t3_list, dtype=np.uint8),
+            "packet_count": np.asarray(pc_list, dtype=np.uint16),
+            "samples_sent": np.asarray(ss_list, dtype=np.uint32),
+            "total_samples": np.asarray(ts_list, dtype=np.uint32),
+        }
+    }
+    
+    print(f"[CAPTURE] Complete: {recv_frames} frames, {received_samples} samples in {elapsed:.2f}s")
+    if rejected["bad_size"] or rejected["t1_zero"] or rejected["bad_packet_count"]:
+        print(f"    Rejected: {rejected}")
+    
+    # Return sample bytes, raw frames bytes, and info
+    raw_frames_bytes = b''.join(raw_frames)
+    return bytes(sample_buf), raw_frames_bytes, info
+
+
 class ExperimentEvent:
     """
     Handles a single experiment event (streaming + save).
