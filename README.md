@@ -333,7 +333,30 @@ Edit these in the notebook configuration cell:
 SAMPLING_RATE_HZ = 16000    # ADS1299: 250, 500, 1000, 2000, 4000, 8000, 16000
 GAIN = 24                   # PGA gain: 1, 2, 4, 6, 8, 12, 24
 MAINS_FREQ_HZ = 50.0        # Notch filter: 50 Hz (EU) or 60 Hz (US)
+FIRMWARE = "FW2"            # Firmware version (for filename/metadata)
+BOARD = "R2"                # Board revision (for filename/metadata)
 ```
+
+### Online Notebook Features
+
+The online notebook automatically:
+
+1. **Applies hardware profiles** before each test:
+   ```python
+   PROFILES = {
+       "INT": "acquisition/profiles/all_shorted.json",
+       "EXT": "acquisition/profiles/all_normal.json",
+       "KSI": "acquisition/profiles/test_signal.json",
+       "FUN": "acquisition/profiles/eyes_open_closed.json",
+   }
+   ```
+
+2. **Dumps and verifies ADS1299 registers** after profile application
+
+3. **Saves sidecar JSON** with each .bin file containing:
+   - Timestamp, ESP32 IP, firmware, board
+   - Profile path, duration, sample rate, gain
+   - Frame count, byte count
 
 ---
 
