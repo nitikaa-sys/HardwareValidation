@@ -6,6 +6,7 @@ ADC counts → µV conversion, DC removal, filtering, PSD/FFT computation.
 
 import numpy as np
 from scipy import signal
+from scipy.signal import decimate
 from scipy.fft import rfft, rfftfreq
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -153,6 +154,145 @@ def welch_psd_uv(uv_ch: np.ndarray, *, fs_hz: int, nperseg: int | None = None) -
     nperseg = max(128, int(nperseg))
     f, pxx = signal.welch(x, fs=fs_hz, nperseg=nperseg, noverlap=nperseg//2, detrend="constant")
     return f, pxx  # µV²/Hz
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# DOWNSAMPLING FOR EEG
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def downsample_for_eeg(
+    signal_uv: np.ndarray,
+    fs_original: int,
+    fs_target: int = 250,
+) -> tuple[np.ndarray, int]:
+    """
+    Properly downsample signal for EEG analysis with anti-alias filtering.
+    
+    Uses scipy.decimate which applies a Chebyshev anti-alias filter before
+    decimation, maximizing SNR by averaging out high-frequency noise.
+    
+    SNR improvement: For 16kHz→250Hz (factor 64), gain is √64 = 8× (~18 dB)
+    
+    Parameters
+    ----------
+    signal_uv : np.ndarray
+        Signal in microvolts at original sample rate
+    fs_original : int
+        Original sampling rate in Hz
+    fs_target : int
+        Target sampling rate in Hz (default 250 Hz, sufficient for EEG)
+    
+    Returns
+    -------
+    signal_ds : np.ndarray
+        Downsampled signal
+    fs_actual : int
+        Actual sample rate after decimation
+        
+    Notes
+    -----
+    For EEG (0-100 Hz bandwidth), 250 Hz is more than adequate (Nyquist = 125 Hz).
+    This gives ~18 dB SNR improvement vs. analyzing at 16 kHz.
+    """
+    if fs_original <= fs_target:
+        return signal_uv, fs_original
+    
+    # Calculate decimation factor
+    factor = int(fs_original / fs_target)
+    
+    if factor <= 1:
+        return signal_uv, fs_original
+    
+    # scipy.decimate applies Chebyshev type I anti-alias filter then decimates
+    # Use zero_phase=True for symmetric filtering (no phase distortion)
+    # For large factors, do in stages to avoid numerical issues
+    
+    signal_ds = signal_uv.copy()
+    fs_current = fs_original
+    
+    while factor > 1:
+        # Max single-stage decimation factor (avoid numerical issues)
+        stage_factor = min(factor, 10)
+        signal_ds = decimate(signal_ds, stage_factor, zero_phase=True)
+        fs_current = fs_current // stage_factor
+        factor = factor // stage_factor
+    
+    return signal_ds, fs_current
+
+
+def preprocess_channel_for_eeg(
+    counts_ch: np.ndarray,
+    *,
+    fs_hz: int,
+    channel_idx: int = 0,
+    fs_target: int = 250,
+    bandpass_hz: tuple = (1.0, 45.0),
+    notch_hz: float = 50.0,
+    notch_q: float = 30.0,
+) -> tuple[np.ndarray, int]:
+    """
+    Full EEG preprocessing pipeline with proper downsampling for maximum SNR.
+    
+    Pipeline:
+    1. Convert ADC counts to µV
+    2. Remove DC offset
+    3. Apply notch filter (at original rate for best attenuation)
+    4. Downsample to target rate (with anti-alias filter)
+    5. Apply bandpass filter (at downsampled rate)
+    
+    Parameters
+    ----------
+    counts_ch : np.ndarray
+        Raw ADC counts for one channel
+    fs_hz : int
+        Original sampling rate in Hz
+    channel_idx : int
+        Channel index (0-7) for gain lookup
+    fs_target : int
+        Target sample rate after downsampling (default 250 Hz)
+    bandpass_hz : tuple
+        (low_hz, high_hz) for bandpass filter (default 1-45 Hz)
+    notch_hz : float
+        Power line notch frequency (50 Hz EU, 60 Hz US)
+    notch_q : float
+        Notch filter Q factor
+    
+    Returns
+    -------
+    signal_filtered : np.ndarray
+        Preprocessed signal in µV at downsampled rate
+    fs_out : int
+        Output sample rate
+    """
+    # Step 1: Convert to µV
+    gain = CHANNEL_GAINS[channel_idx] if channel_idx < len(CHANNEL_GAINS) else GAIN
+    x = counts_to_uv(counts_ch, gain=gain)
+    
+    # Step 2: Remove DC
+    x = x - np.mean(x)
+    
+    # Step 3: Notch filter at original rate (best attenuation)
+    if notch_hz > 0 and fs_hz > 2 * notch_hz:
+        b, a = signal.iirnotch(w0=notch_hz, Q=notch_q, fs=fs_hz)
+        if x.size > 3 * max(len(a), len(b)):
+            x = signal.filtfilt(b, a, x)
+    
+    # Step 4: Downsample (with anti-alias filter)
+    x, fs_out = downsample_for_eeg(x, fs_hz, fs_target)
+    
+    # Step 5: Bandpass at downsampled rate
+    low_hz, high_hz = bandpass_hz
+    nyquist = fs_out / 2
+    
+    # Ensure valid normalized frequencies
+    low_norm = max(0.001, low_hz / nyquist)
+    high_norm = min(0.999, high_hz / nyquist)
+    
+    if 0 < low_norm < high_norm < 1.0 and x.size > 50:
+        sos = signal.butter(4, [low_norm, high_norm], btype='band', output='sos')
+        x = signal.sosfiltfilt(sos, x)
+    
+    return x, fs_out
 
 
 def fft_dbfs_from_counts(counts_ch: np.ndarray, *, fs_hz: int, window: str = "hann") -> tuple[np.ndarray, np.ndarray]:

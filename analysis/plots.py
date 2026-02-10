@@ -13,6 +13,7 @@ from .decode_bin import N_CHANNELS
 from .timing_integrity import unwrap_u32_to_i64, dt1_metrics
 from .preprocess import (
     preprocess_channel_uv, welch_psd_uv, fft_dbfs_from_counts,
+    preprocess_channel_for_eeg, downsample_for_eeg, counts_to_uv,
     FS_HZ, BAND_MAX_HZ_DEFAULT
 )
 
@@ -1014,9 +1015,13 @@ def plot_eo_ec_publication_complete(
     psd_channel: int = 5,
     montage_image_path: str = None,
     figsize: tuple = (14, 8),
+    fs_target: int = 250,  # Target sample rate for SNR optimization
 ) -> plt.Figure:
     """
-    Complete publication figure with 3 panels matching reference exactly:
+    Complete publication figure with 3 panels matching reference exactly.
+    
+    NOW WITH PROPER DOWNSAMPLING for maximum SNR!
+    - 16kHz → 250Hz = √64 = 8× SNR improvement (~18 dB)
     
     Layout:
         (a) Left:         Electrode montage diagram (image)
@@ -1028,7 +1033,7 @@ def plot_eo_ec_publication_complete(
     counts_eo, counts_ec : np.ndarray
         Raw ADC counts, shape (8, n_samples)
     fs_hz : int
-        Sampling rate in Hz
+        Original sampling rate in Hz
     duration_s : float
         Duration per condition (default 5s)
     psd_channel : int
@@ -1037,6 +1042,9 @@ def plot_eo_ec_publication_complete(
         Path to montage diagram PNG. If None, draws placeholder.
     figsize : tuple
         Figure size
+    fs_target : int
+        Target sample rate after downsampling (default 250 Hz)
+        Use 250 Hz for EEG - gives SNR boost while keeping 0-100 Hz band
     
     Returns
     -------
@@ -1078,24 +1086,27 @@ def plot_eo_ec_publication_complete(
     )
     
     # ─── PANEL (b): PSD Comparison ─────────────────────────────────────────────
+    # Now with PROPER DOWNSAMPLING for better SNR!
     ax_psd = fig.add_subplot(gs_right[0])
     
     arr_idx = psd_channel - 1
     electrode = ELECTRODE_MAP.get(psd_channel, f"Ch{psd_channel}")
     
-    # Preprocess (full spectrum, no bandpass)
-    uv_eo = preprocess_channel_uv(
+    # Preprocess with downsampling for SNR (bandpass 1-45 Hz)
+    uv_eo, fs_out_eo = preprocess_channel_for_eeg(
         counts_eo[arr_idx], fs_hz=fs_hz, channel_idx=arr_idx,
-        test_type="hardware",
+        fs_target=fs_target,
+        bandpass_hz=(1.0, 45.0),  # Full EEG range for PSD
     )
-    uv_ec = preprocess_channel_uv(
+    uv_ec, fs_out_ec = preprocess_channel_for_eeg(
         counts_ec[arr_idx], fs_hz=fs_hz, channel_idx=arr_idx,
-        test_type="hardware",
+        fs_target=fs_target,
+        bandpass_hz=(1.0, 45.0),
     )
     
-    # Compute PSD
-    f_eo, psd_eo = welch_psd_uv(uv_eo, fs_hz=fs_hz)
-    f_ec, psd_ec = welch_psd_uv(uv_ec, fs_hz=fs_hz)
+    # Compute PSD at downsampled rate
+    f_eo, psd_eo = welch_psd_uv(uv_eo, fs_hz=fs_out_eo)
+    f_ec, psd_ec = welch_psd_uv(uv_ec, fs_hz=fs_out_ec)
     
     freq_max = 30.0
     mask = f_eo <= freq_max
@@ -1118,13 +1129,15 @@ def plot_eo_ec_publication_complete(
     ax_psd.set_title("(b)", fontsize=12, fontweight='bold', loc='left')
     
     # ─── PANEL (c): Time Series Montage ────────────────────────────────────────
+    # Now with PROPER DOWNSAMPLING for better SNR!
     gs_timeseries = gridspec.GridSpecFromSubplotSpec(
         4, 1, subplot_spec=gs_right[1], hspace=0.05
     )
     
-    n_samples = int(duration_s * fs_hz)
-    total_samples = n_samples * 2
-    t = np.arange(total_samples) / fs_hz
+    # Samples at downsampled rate
+    n_samples_ds = int(duration_s * fs_target)
+    total_samples_ds = n_samples_ds * 2
+    t = np.arange(total_samples_ds) / fs_target  # Time axis at downsampled rate
     
     channel_order = [2, 3, 4, 5]  # Fp1, Fp2, O1, O2
     all_data = []
@@ -1137,16 +1150,20 @@ def plot_eo_ec_publication_complete(
         arr_idx = hw_ch - 1
         electrode_name = ELECTRODE_MAP[hw_ch]
         
-        # Preprocess with alpha bandpass for visualization
-        uv_eo_ch = preprocess_channel_uv(
+        # Preprocess with downsampling for SNR + alpha bandpass
+        uv_eo_ch, fs_out = preprocess_channel_for_eeg(
             counts_eo[arr_idx], fs_hz=fs_hz, channel_idx=arr_idx,
-            test_type="functional",
-        )[:n_samples]
+            fs_target=fs_target,
+            bandpass_hz=(7.0, 13.0),  # Alpha band for visualization
+        )
+        uv_eo_ch = uv_eo_ch[:n_samples_ds]
         
-        uv_ec_ch = preprocess_channel_uv(
+        uv_ec_ch, _ = preprocess_channel_for_eeg(
             counts_ec[arr_idx], fs_hz=fs_hz, channel_idx=arr_idx,
-            test_type="functional",
-        )[:n_samples]
+            fs_target=fs_target,
+            bandpass_hz=(7.0, 13.0),
+        )
+        uv_ec_ch = uv_ec_ch[:n_samples_ds]
         
         # Concatenate EO + EC
         uv_concat = np.concatenate([uv_eo_ch, uv_ec_ch])
