@@ -6,9 +6,19 @@ All business logic delegated to acquisition modules.
 API routes and response formats unchanged from original.
 
 Usage:
-    python web_ui.py
+    python acquisition/web_ui.py   (from Hardwareanalysis directory)
+    python -m acquisition.web_ui   (as module)
     (Browser will open automatically to http://localhost:8000)
 """
+
+import sys
+from pathlib import Path
+
+# Ensure parent directory is in path for absolute imports
+_SCRIPT_DIR = Path(__file__).parent.resolve()
+_REPO_ROOT = _SCRIPT_DIR.parent
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
 
 import asyncio
 import json
@@ -18,7 +28,6 @@ import queue
 import webbrowser
 import time
 from datetime import datetime
-from pathlib import Path
 from typing import List, Optional
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.staticfiles import StaticFiles
